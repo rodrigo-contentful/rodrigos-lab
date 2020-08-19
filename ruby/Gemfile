@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+
+gem 'contentful-webhook-listener'
+gem 'contentful-management'
+gem 'pry'

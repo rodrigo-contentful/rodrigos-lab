@@ -11,4 +11,4 @@ $ go run server.go
 
 ## How to use
 
-GET localhost:80
+POST localhost:80

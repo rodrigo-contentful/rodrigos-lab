@@ -155,6 +155,7 @@ func migrate(t Payload, keys string, config *Config) {
 		Fields: ct.Fields,
 	}
 
+	// upserting ContentTypes pero space
 	for _, desSpaceID := range config.SpaceDestID {
 		e := upsertContentType(desSpaceID, cma, ctNew)
 		if e != nil {
@@ -169,6 +170,7 @@ func migrate(t Payload, keys string, config *Config) {
 		fmt.Printf("Error getting Entry: %+v\n", e)
 	}
 
+	//Upserting Entries per space
 	for _, desSpaceID := range config.SpaceDestID {
 		e := upsertEntry(desSpaceID, cma, ctNew, entry)
 		if e != nil {

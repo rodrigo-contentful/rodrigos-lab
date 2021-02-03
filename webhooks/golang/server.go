@@ -12,10 +12,12 @@ import (
 	"net/http"
 	"strings"
 
-	// unsuported golang SDK :/
-	//https://github.com/contentful-labs/contentful-go
-	contentful "github.com/contentful-labs/contentful-go"
+	// unsuported golang SDK :/ Froked from: https://github.com/contentful-labs/contentful-go
+	contentful "github.com/rodrigo-contentful/contentful-go"
 )
+
+// configFile incliudes, organization, space and keys for CTF
+const configFile = "config_otb.json"
 
 // Config defines a script configuration
 type Config struct {
@@ -66,9 +68,10 @@ type Sys struct {
 
 // Fields defines the example ContentType fields
 type Fields struct {
-	Test  interface{}       `json:"test"`
-	Title map[string]string `json:"title"`
-	Turn  map[string]bool   `json:"turn"`
+	//	Test  interface{}       `json:"test"`
+	Title       map[string]string `json:"title"`
+	Description interface{}       `json:"description"`
+	//Turn  map[string]bool   `json:"turn"`
 }
 
 // Payload defines the JSON payload from getContentType
@@ -91,20 +94,31 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
-		decoder := json.NewDecoder(r.Body)
-		var t Payload
-		err := decoder.Decode(&t)
-		if err != nil {
-			panic(err)
+		if r.Method == http.MethodPost {
+			decoder := json.NewDecoder(r.Body)
+			var t Payload
+			err := decoder.Decode(&t)
+			if err != nil {
+				panic(err)
+			}
+
+			// get locales keys
+			var keys string
+			for k := range t.Fields.Title {
+				keys = k
+			}
+
+			migrate(t, keys, &config)
+		} else if r.Method == http.MethodGet {
+			query := r.URL.Query()
+
+			// Get contentType to migrate with URL parameters
+			id := query.Get("contenttype")
+
+			log.Printf("GET: contenttype=%s\n", id)
+			migrateGET(id, &config)
 		}
 
-		// get locales keys
-		var keys string
-		for k := range t.Fields.Title {
-			keys = k
-		}
-
-		migrate(t, keys, &config)
 	})
 
 	fs := http.FileServer(http.Dir("static/"))
@@ -116,7 +130,7 @@ func main() {
 // loadConfig returns the json configuration as structure
 func loadConfig(config *Config) bool {
 	// read file
-	data, err := ioutil.ReadFile("./config.json")
+	data, err := ioutil.ReadFile(fmt.Sprintf("./%s", configFile))
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -162,21 +176,54 @@ func migrate(t Payload, keys string, config *Config) {
 			fmt.Printf("Error: %s", e.Error())
 		}
 	}
+	return
+	/*
+		//copy entry
+		// Get Entry from space A
+		entry, e := cma.Entries.Get(spaceID, t.Sys.ID)
+		if e != nil {
+			fmt.Printf("Error getting Entry: %+v\n", e)
+		}
 
-	//copy entry
-	// Get Entry from space A
-	entry, e := cma.Entries.Get(spaceID, t.Sys.ID)
+		//Upserting Entries per space
+		for _, desSpaceID := range config.SpaceDestID {
+			e := upsertEntry(desSpaceID, cma, ctNew, entry)
+			if e != nil {
+				fmt.Printf("%s", e.Error())
+			}
+		}
+	*/
+}
+
+// migrate will upsert a content type from space A to space B, later will upsert an entry from that content type from space A to space B
+func migrateGET(CTID string, config *Config) {
+
+	orgID := config.OrgID
+	cmaToken := config.CmaToken   // observe your CMA token from Contentful's web page
+	spaceID := config.SpaceOrigID // space origin
+	cma := contentful.NewCMA(cmaToken).SetOrganization(orgID)
+	cma.Debug = true
+
+	// copy CT
+	// GetContentType from space A
+	ct, e := cma.ContentTypes.Get(spaceID, CTID)
 	if e != nil {
-		fmt.Printf("Error getting Entry: %+v\n", e)
+		fmt.Printf("Errro gettong CT: %+v\n", e)
 	}
 
-	//Upserting Entries per space
+	ctNew := &contentful.ContentType{
+		Name:   ct.Name,
+		Fields: ct.Fields,
+	}
+
+	// upserting ContentTypes pero space
 	for _, desSpaceID := range config.SpaceDestID {
-		e := upsertEntry(desSpaceID, cma, ctNew, entry)
+		e := upsertContentType(desSpaceID, cma, ctNew)
 		if e != nil {
-			fmt.Printf("%s", e.Error())
+			fmt.Printf("Error: %s", e.Error())
 		}
 	}
+	return
 }
 
 // upsertContentType expects a space destination, cma client and conten type and will upsert a ContentType in destantion space

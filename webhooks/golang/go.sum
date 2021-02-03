@@ -1,0 +1,7 @@
+github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/rodrigo-contentful/contentful-go v0.4.3 h1:XjyU8B4bgFJy4pxKwSFi9feHBe+1ZaA20tO7lpdhLWY=
+github.com/rodrigo-contentful/contentful-go v0.4.3/go.mod h1:pEbh8kxJoq40lorCceCgwFWssRDSkeFxV5dsuQC0SPI=
+github.com/stretchr/testify v1.1.4/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
+moul.io/http2curl v1.0.1-0.20190925090545-5cd742060b0e h1:C7q+e9M5nggAvWfVg9Nl66kebKeuJlP3FD58V4RR5wo=
+moul.io/http2curl v1.0.1-0.20190925090545-5cd742060b0e/go.mod h1:nejbQVfXh96n9dSF6cH3Jsk/QI1Z2oEL7sSI2ifXFNA=

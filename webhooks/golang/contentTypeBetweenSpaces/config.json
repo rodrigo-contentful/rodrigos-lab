@@ -1,0 +1,10 @@
+{
+    "organizationID":"SOME_ORG_ID",
+    "cmaToken":"SOME_CMA_TOKEN",
+    "spaceOriginID":"SPACE_ORIGIN_ID",
+    "spaceDestID":[
+        "SPACE_DEST_ID_1",
+        "SPACE_DEST_ID_2",
+        "SPACE_DEST_ID_N..."
+    ]
+}

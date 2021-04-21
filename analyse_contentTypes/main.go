@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -157,17 +159,6 @@ func disabledValidation(field Field, validations map[string]string) (map[string]
 	return validations, nil
 }
 
-func existKey(visited []string, key string) bool {
-
-	for _, v := range visited {
-		if v == key {
-			return true
-		}
-	}
-
-	return false
-}
-
 func existVisited(visited []string, key string) bool {
 	for _, v := range visited {
 		if v == key {
@@ -178,27 +169,15 @@ func existVisited(visited []string, key string) bool {
 }
 
 func doReferenceTree(validationRefs map[string][]string, ToVisit []string, visited []string, contentID_to_search string, indexToCheck int) (bool, map[string][]string, []string, []string, string, int) {
-	//fmt.Println("")
-	// fmt.Println("DOING " + contentID_to_search)
-	//fmt.Println("DOING " + ToVisit[indexToCheck])
-	//fmt.Printf("VISITED: '%s' \n", visited)
-	// if node not exist, return exit GOOD
-	subNode, ok := validationRefs[ToVisit[indexToCheck]]
-	// fmt.Printf("check if exist key '%s' -> %s \n", ToVisit[indexToCheck], ok)
 
-	//fmt.Printf("check if exist key '%s' -> %s \n", ToVisit[indexToCheck], ok)
+	subNode, ok := validationRefs[ToVisit[indexToCheck]]
+
 	if !ok {
-		// fmt.Printf("key does not exist '%s' \n", ToVisit[indexToCheck])
-		// contentID to searchh is not a key
-		//visited = make([]string, 0, 0)
-		//visited = visited[:len(visited)-1]
-		//visited = visited[0:1]
 		return false, validationRefs, ToVisit, visited, ToVisit[indexToCheck], indexToCheck
 	} else {
-		// fmt.Printf("EXIST, check '%s' \n", subNode)
 
 		if existVisited(visited, ToVisit[indexToCheck]) {
-			//fmt.Printf("NODE was visited, exit %d -> %s \n", indexToCheck, ToVisit[indexToCheck])
+
 			visited = append(visited, ToVisit[indexToCheck])
 			return true, validationRefs, ToVisit, visited, ToVisit[indexToCheck], indexToCheck
 		}
@@ -206,41 +185,14 @@ func doReferenceTree(validationRefs map[string][]string, ToVisit []string, visit
 
 		for ToVisitK, ToVisitV := range subNode {
 
-			// check if was visited
-			// if existVisited(visited, ToVisitV) {
-			// 	fmt.Printf("NODE was visited, exit %d -> %s \n", ToVisitK, ToVisitV)
-			// 	return false, validationRefs, subNode, visited, ToVisitV, ToVisitK
-			// }
-
-			//NewindexToCheck = -1
-			//fmt.Printf("Look for subchild %d -> %s: '%s' \n", indexToCheck, subNode[NewindexToCheck])
-			//visited = append(visited, ToVisitV)
-			//return true, validationRefs, ToVisit, visited, ToVisit[indexToCheck], indexToCheck
 			ok, a, b, visited, d, e := doReferenceTree(validationRefs, subNode, visited, ToVisitV, ToVisitK)
-			// fmt.Println("********")
-			// fmt.Printf("ok '%s' \n", ok)
-			// fmt.Printf("a '%s' \n", a)
-			// fmt.Printf("b '%s' \n", b)
-			// fmt.Printf("visited '%s' \n", visited)
-			// fmt.Printf("d '%s' \n", d)
-			// fmt.Printf("e '%s' \n", e)
-			// fmt.Println("********")
+
 			if ok {
 				// if true exit
 				return ok, a, b, visited, d, e
-			} //else {
-			//	visited = visited[:len(visited)-1]
-			//}
-			//visited = append(visited, ToVisit[indexToCheck])
-			//return ok, a, b, c, d, e
+			}
 		}
-		// fmt.Printf("checking visited '%s' \n", subNode)
-		// if ok := existVisited(visited, contentID_to_search); ok {
-		// 	fmt.Printf("EXIT; NODE VISISTED '%s' \n", contentID_to_search)
-		// 	return false, validationRefs, visited, contentID_to_search
-		// }
 	}
-	// visited = append(visited, contentID_to_search)
 
 	return false, validationRefs, ToVisit, visited, contentID_to_search, indexToCheck
 }
@@ -330,8 +282,34 @@ type errorReport struct {
 
 func main() {
 
+	var ctFilename string
+	flag.StringVar(&ctFilename, "f", "", "Specify contentType JSON file.")
+
+	flag.Usage = func() {
+		fmt.Printf("Usage of our Program: \n")
+		fmt.Printf("./go-project -f /var/doc/MyContentTypeFile.json\n")
+		fmt.Println("")
+		fmt.Printf("How to generate it: \n")
+		fmt.Println("***")
+		fmt.Println("With CLI: ")
+		fmt.Println("$ contentful space export --skip-content --skip-roles --skip-webhooks")
+		fmt.Println("***")
+		fmt.Println("***")
+		fmt.Println("With CMA: https://www.contentful.com/developers/docs/references/content-management-api/#/reference/content-types/content-type-collection/get-all-content-types-of-a-space/console/curl")
+		fmt.Println("***")
+	}
+	flag.Parse()
+
+	if len(ctFilename) == 0 {
+		fmt.Println("parameter 'f' with filename required")
+		return
+	} else if _, err := os.Stat(ctFilename); err != nil {
+		fmt.Printf("File does not exist\n")
+		return
+	}
+
 	// read file
-	data, err := ioutil.ReadFile("./ctf.json")
+	data, err := ioutil.ReadFile(ctFilename)
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -407,15 +385,10 @@ func main() {
 
 		if len(errMsg) == 0 {
 			err.Errors = []string{"No  errors."}
-			//fmt.Println("No  errors.")
 		} else {
 			err.Errors = errMsg
-			// for _, errv := range errMsg {
-			// 	fmt.Println(errv)
-			// }
 		}
 		errorReports[vItem.Name] = err
-		//fmt.Println("")
 	}
 
 	keys := make([]string, 0, len(errorReports))

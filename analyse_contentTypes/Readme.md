@@ -8,7 +8,10 @@ go.1.14 up
 
 ## How to use
 
-go run main.go
+go run main.go -f some/file/fileName.json
+
+### by executable
+$ ./analyseContentTypes -f some/file/fileName.json
 
 ### planned
 

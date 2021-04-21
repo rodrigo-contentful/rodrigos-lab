@@ -45,3 +45,7 @@ Script that listen to POST request (webhook) from Contenful, will copy a content
 Script that listen to POST request (webhook) from Contenful, will post the webhook paylod into RMQ.
 
 [rmqConsumerProducer](webhooks/golang/rmqConsumerProducer)
+
+# Comming on...
+
+# error log anaylser

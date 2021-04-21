@@ -23,9 +23,9 @@ $ ./analyseContentTypes -f some/file/fileName.json
     $ ./analyseContentTypes -f example_app_content_model.json
     ** Analysis Report **
     Description:
-    [Missing] - Value missing.
     [Notice] - Good practice attention.
-    [Validation] - Validation missing or unsuported.
+    [Warning] - Possible issue.
+    [Issue] - Issue, something to consider changing.
 
     Total ContentTypes: 10
     ***** REPORT ******* 

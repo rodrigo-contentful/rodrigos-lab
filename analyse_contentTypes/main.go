@@ -334,9 +334,9 @@ func main() {
 
 	fmt.Printf("** Analysis Report **\n")
 	fmt.Printf("Description:\n")
-	fmt.Printf("[Missing] - Value missing.\n")
 	fmt.Printf("[Notice] - Good practice attention.\n")
-	fmt.Printf("[Validation] - Validation missing or unsuported.\n")
+	fmt.Printf("[Warning] - Possible issue.\n")
+	fmt.Printf("[Issue] - Issue, something to consider changing.\n")
 	fmt.Printf("\n")
 	fmt.Printf("Total ContentTypes: %d\n", len(obj.Items))
 	fmt.Printf("***** REPORT ******* \n")
@@ -362,14 +362,14 @@ func main() {
 
 		errMsg := make([]string, 0)
 		if existDesc, _ := missingDescription(vItem); existDesc {
-			errMsg = append(errMsg, "* [Missing] Description.")
+			errMsg = append(errMsg, "* [Notice] Description is missing.")
 		}
 		if len(vItem.Fields) == 1 {
-			errMsg = append(errMsg, "* [Notice] Single fields: "+vItem.Fields[0].Name)
+			errMsg = append(errMsg, "* [Notice] Content type with a single fields: "+vItem.Fields[0].Name)
 		}
 
 		if ref, ok := validations["references"]; ok && len(validations["references"]) > 0 {
-			errMsg = append(errMsg, "* [Validation] Missing validation on 'reference' fields: "+ref)
+			errMsg = append(errMsg, "* [Warning] A reference field(s) lack validation, fields: "+ref)
 		}
 		if ref, ok := validations["omitted"]; ok && len(validations["omitted"]) > 0 {
 			errMsg = append(errMsg, "* [Notice] Ommited from API response(ommited): "+ref)
@@ -380,7 +380,7 @@ func main() {
 		}
 
 		if msg, ok := loopValidationErrors[vItem.Sys.ID]; ok {
-			errMsg = append(errMsg, "* [Validation] Infinite loop: "+msg)
+			errMsg = append(errMsg, "* [Issue] Infinite loop on content Type refernces: "+msg)
 		}
 
 		if len(errMsg) == 0 {

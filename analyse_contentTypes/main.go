@@ -1,5 +1,13 @@
 package main
 
+/*
+Steps
+
+1.- Identify microcpy - HTML elements labels
+2.- Identify CTA
+3.- Duplicated medias
+4.- Standard Naming
+*/
 import (
 	"encoding/json"
 	"flag"
@@ -146,6 +154,64 @@ func omittedValidation(field Field, validations map[string]string) (map[string]s
 	return validations, nil
 }
 
+var htmlElements = []string{
+	"form",
+	"input",
+	"datalist",
+	"fieldset",
+	"keygen",
+	"label",
+	"legend",
+	"optgroup",
+	"option",
+	"output",
+	"select",
+	"textarea",
+	"input",
+	"output",
+	"label",
+	"select",
+	"button",
+	"option",
+	"textarea",
+	"optgroup",
+	"fieldset",
+}
+
+func fieldNameAsHTMLElement(field Field, validations map[string]string) (map[string]string, error) {
+
+	for _, elementName := range htmlElements {
+		if strings.Contains(strings.ToLower(field.Name), elementName) {
+			validations["htmlName"] = fmt.Sprintf("Possible microcopy: field name '%s' includes html element name '%s'", field.Name, elementName)
+			return validations, nil
+		}
+	}
+
+	return validations, nil
+}
+
+func fieldCTA(field Field, validations map[string]string) (map[string]string, error) {
+
+	if strings.Contains(strings.ToLower(field.Name), "button") {
+		validations["htmlName"] = fmt.Sprintf("Possible CTA(call to action): field name '%s' includes the text 'button'", field.Name)
+		return validations, nil
+	}
+
+	return validations, nil
+}
+
+func fieldNotResponsive(field Field, validations map[string]string) (map[string]string, error) {
+
+	responsiveLabels := []string{"desktop", "mobile", "tablet"}
+	for _, elementName := range responsiveLabels {
+		if strings.Contains(strings.ToLower(field.Name), elementName) {
+			validations["htmlName"] = fmt.Sprintf("%s Possible NON responsive field: field name '%s' includes the text '%s' \n", validations["htmlName"], field.Name, elementName)
+			return validations, nil
+		}
+	}
+	return validations, nil
+}
+
 func disabledValidation(field Field, validations map[string]string) (map[string]string, error) {
 
 	if _, ok := validations["disabled"]; !ok {
@@ -168,7 +234,6 @@ func existVisited(visited []string, key string) bool {
 	return false
 }
 
-//func doReferenceTree(validationRefs map[string][]string, ToVisit []string, visited []string, contentID_to_search string, indexToCheck int) (bool, []string) {
 func doReferenceTree(validationRefs map[string][]string, ToVisit []string, visited []string, indexToCheck int) (bool, []string) {
 
 	subNode, ok := validationRefs[ToVisit[indexToCheck]]
@@ -354,12 +419,23 @@ func main() {
 
 		validations := make(map[string]string, 100)
 
+		/*
+			Steps
+
+			1.- Identify microcpy - HTML elements labels
+			2.- Identify CTA
+			3.- Duplicated medias
+			4.- Standard Naming
+		*/
 		for _, vField := range vItem.Fields {
 
 			// add validations functions  for fields here
 			validations, _ = missingReferenceValidation(vField, validations)
 			validations, _ = omittedValidation(vField, validations)
 			validations, _ = disabledValidation(vField, validations)
+			validations, _ = fieldNameAsHTMLElement(vField, validations)
+			validations, _ = fieldCTA(vField, validations)
+			validations, _ = fieldNotResponsive(vField, validations)
 		}
 
 		errMsg := make([]string, 0)
@@ -381,8 +457,12 @@ func main() {
 			errMsg = append(errMsg, "* [Notice] Disabled in WebApp field(disabled): "+ref)
 		}
 
+		if ref, ok := validations["htmlName"]; ok && len(validations["htmlName"]) > 0 {
+			errMsg = append(errMsg, "* [Notice] "+ref)
+		}
+
 		if msg, ok := loopValidationErrors[vItem.Sys.ID]; ok {
-			errMsg = append(errMsg, "* [Issue] Infinite loop on content Type refernces: "+msg)
+			errMsg = append(errMsg, "* [Warning] Infinite loop on content Type refernces: "+msg)
 		}
 
 		if len(errMsg) == 0 {

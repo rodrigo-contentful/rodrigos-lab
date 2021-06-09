@@ -1,6 +1,6 @@
 # CTF Webhook -> RMQ
 
-Incldes script that creates a listener POSR endpoint, in request will forward the body to RMQ 
+Incldes script that creates a listener POST endpoint, in request will forward the body to RMQ 
 
 ## Min requirements
 

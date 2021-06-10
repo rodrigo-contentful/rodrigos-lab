@@ -141,6 +141,28 @@ func missingReferenceValidation(field Field, validations map[string]string) (map
 	return validations, nil
 }
 
+func textFieldValidationByName(field Field, validations map[string]string) (map[string]string, error) {
+
+	if _, ok := validations["fieldValidationByName"]; !ok {
+		validations["fieldValidationByName"] = ""
+	}
+
+	var fieldValidNames = []string{"email", "telephone", "mobile", "url", "link", "date", "time"}
+
+	for _, fieldValidName := range fieldValidNames {
+		nameTmp := strings.Trim(field.Name, " ")
+		nameTmp = strings.Trim(nameTmp, "_")
+		nameTmp = strings.Trim(nameTmp, "-")
+		if strings.Contains(strings.ToLower(nameTmp), fieldValidName) {
+			if len(field.Validations) == 0 && field.Type == "Symbol" {
+				validations["fieldValidationByName"] = fmt.Sprintf("Possible validation missing: field name '%s' matches a Contentful text validation '%s'", field.Name, fieldValidName)
+				return validations, nil
+			}
+		}
+	}
+	return validations, nil
+}
+
 func omittedValidation(field Field, validations map[string]string) (map[string]string, error) {
 
 	if _, ok := validations["omitted"]; !ok {
@@ -436,6 +458,7 @@ func main() {
 			validations, _ = fieldNameAsHTMLElement(vField, validations)
 			validations, _ = fieldCTA(vField, validations)
 			validations, _ = fieldNotResponsive(vField, validations)
+			validations, _ = textFieldValidationByName(vField, validations)
 		}
 
 		errMsg := make([]string, 0)
@@ -458,6 +481,10 @@ func main() {
 		}
 
 		if ref, ok := validations["htmlName"]; ok && len(validations["htmlName"]) > 0 {
+			errMsg = append(errMsg, "* [Notice] "+ref)
+		}
+
+		if ref, ok := validations["fieldValidationByName"]; ok && len(validations["fieldValidationByName"]) > 0 {
 			errMsg = append(errMsg, "* [Notice] "+ref)
 		}
 

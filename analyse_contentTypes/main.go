@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -402,10 +403,28 @@ type fieldValidation struct {
 	HideDefault     bool
 }
 
+func iterateDirectory(path, ctDirectory string) []string {
+	res := make([]string, 0, 10)
+	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			// log.Fatalf(err.Error())
+			return err
+		}
+		if filepath.Ext(fmt.Sprintf("%s/%s", path, info.Name())) == ".json" {
+			// fmt.Printf("File Name: %s\n", info.Name())
+			res = append(res, fmt.Sprintf("%s/%s", ctDirectory, info.Name()))
+		}
+		return nil
+	})
+	// fmt.Printf("%+v", res)
+	return res
+}
+
 func main() {
 
-	var ctFilename string
+	var ctFilename, ctDirectory string
 	flag.StringVar(&ctFilename, "f", "", "Specify contentType JSON file.")
+	flag.StringVar(&ctDirectory, "d", "", "Specify directory of contentType JSON files.")
 
 	flag.Usage = func() {
 		fmt.Printf("Usage of our Program: \n")
@@ -413,22 +432,42 @@ func main() {
 		fmt.Println("")
 		fmt.Printf("How to generate it: \n")
 		fmt.Println("***")
-		fmt.Println("With CLI: ")
-		fmt.Println("$ contentful space export --skip-content --skip-roles --skip-webhooks")
-		fmt.Println("***")
-		fmt.Println("***")
-		fmt.Println("With CMA: https://www.contentful.com/developers/docs/references/content-management-api/#/reference/content-types/content-type-collection/get-all-content-types-of-a-space/console/curl")
-		fmt.Println("***")
 	}
 	flag.Parse()
 
-	if len(ctFilename) == 0 {
-		fmt.Println("parameter 'f' with filename required")
-		return
-	} else if _, err := os.Stat(ctFilename); err != nil {
-		fmt.Printf("File does not exist\n")
+	if len(ctFilename) == 0 && len(ctDirectory) == 0 {
+		fmt.Println("parameter 'f' with filename or 'd' with directory required")
 		return
 	}
+
+	filesToParse := make([]string, 0, 10)
+	if len(ctFilename) != 0 {
+		if _, err := os.Stat(ctFilename); err != nil {
+			fmt.Printf("File '%s' does not exist \n", ctFilename)
+			return
+		}
+		filesToParse = append(filesToParse, ctFilename)
+	} else if len(ctDirectory) != 0 {
+		if _, err := os.Stat(ctDirectory); err != nil {
+			fmt.Printf("Direcotry '%s' does not exist \n", ctDirectory)
+			return
+		}
+
+		currentDirectory, err := os.Getwd()
+		if err != nil {
+			fmt.Printf("%+v", err.Error())
+		}
+		currentDirectory = fmt.Sprintf("%s/", ctDirectory)
+		filesToParse = iterateDirectory(currentDirectory, ctDirectory)
+
+	}
+
+	for _, fileName := range filesToParse {
+		processJSONFile(fileName)
+	}
+}
+
+func processJSONFile(ctFilename string) {
 
 	// read file
 	data, err := ioutil.ReadFile(ctFilename)
@@ -454,7 +493,11 @@ func main() {
 
 	loopValidationErrors, nonOrphanContentTypes := validatereferncesLoop(obj)
 
-	fmt.Printf("** Analysis Report Space '%s' **\n",obj.Items[0].Sys.Space.Sys.ID)
+	fmt.Println()
+	fmt.Println()
+	fmt.Printf("***************************************************************\n")
+	fmt.Println()
+	fmt.Printf("** Analysis Report Space '%s' **\n", obj.Items[0].Sys.Space.Sys.ID)
 	fmt.Printf("Description:\n")
 	fmt.Printf(noticeLog("Good practice/recomendation.\n"))
 	fmt.Printf(attentionLog("Something to have a look at.\n"))

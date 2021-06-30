@@ -454,7 +454,7 @@ func main() {
 
 	loopValidationErrors, nonOrphanContentTypes := validatereferncesLoop(obj)
 
-	fmt.Printf("** Analysis Report **\n")
+	fmt.Printf("** Analysis Report Space '%s' **\n",obj.Items[0].Sys.Space.Sys.ID)
 	fmt.Printf("Description:\n")
 	fmt.Printf(noticeLog("Good practice/recomendation.\n"))
 	fmt.Printf(attentionLog("Something to have a look at.\n"))
@@ -473,6 +473,14 @@ func main() {
 		err := errorReport{
 			ContentTypeName: vItem.Name,
 			ContentTypeID:   vItem.Sys.ID,
+		}
+
+		// find the display field, if not existante is null or empty
+		// that is why is needed to cast to string
+		vItemDisplayfield := ""
+		switch vItem.Displayfield.(type) { // the switch uses the type of the interface
+		case string:
+			vItemDisplayfield = vItem.Displayfield.(string)
 		}
 
 		validations := make(map[string]string, 100)
@@ -499,13 +507,13 @@ func main() {
 			// Add contentYtpes and fields to map of duplicated values
 			nFielValidation := fieldValidation{
 				ContentTypeName: vItem.Name,
-				FieldName:       vField.Name,
+				FieldName:       vField.Name + " " + vItemDisplayfield,
 				FieldID:         vField.ID,
 				FieldType:       vField.Type,
 				HideDefault:     false,
 			}
 
-			if vItem.Displayfield == nFielValidation.FieldID {
+			if vItemDisplayfield == nFielValidation.FieldID {
 				nFielValidation.HideDefault = true
 			}
 
@@ -561,6 +569,11 @@ func main() {
 			errMsg = append(errMsg, warningLog("Content type not referenced(Orphan)."))
 		}
 
+		// no display field selected
+		if len(vItemDisplayfield) == 0 {
+			errMsg = append(errMsg, issueLog("Content type ha sno title field."))
+		}
+
 		if len(errMsg) == 0 {
 			err.Errors = []string{"* 🥇 No  errors."}
 		} else {
@@ -586,17 +599,29 @@ func main() {
 		fmt.Println("")
 	}
 
-	// fmt.Println("")
-	// fmt.Println("")
-	// fmt.Println("Fields duplications:")
-	// fmt.Println("")
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println("Possible fields duplications:")
+	fmt.Println("")
 
-	// for _, contentTypeItem := range obj.Items {
-	// 	for _, vField := range contentTypeItem.Fields {
-	// 		fieldDuplicated(vField, fieldDuplication)
-	// 	}
+	fieldsChecked := make(map[string]string, 100)
+	for _, contentTypeItem := range obj.Items {
+		for _, vField := range contentTypeItem.Fields {
+			if _, ok := fieldsChecked[vField.ID]; !ok {
+				res := fieldDuplicated(vField, fieldDuplication)
 
-	// }
+				if len(res) > 0 {
+					fmt.Println(noticeLog(fmt.Sprintf("Field '%s' duplicated in Content Types:", vField.ID)))
+					for _, msg := range res {
+						fmt.Println(msg)
+					}
+					fmt.Println("")
+				}
+				fieldsChecked[vField.ID] = vField.ID
+			}
+		}
+
+	}
 
 }
 
@@ -604,11 +629,13 @@ func fieldDuplicated(f Field, duplications map[string][]fieldValidation) []strin
 	res := make([]string, 0, 10)
 	if findDuplication, ok := duplications[f.ID]; ok {
 		if len(findDuplication) > 1 {
-			fmt.Printf("Field '%s' duplicated in types: \n", f.ID)
 			for _, vv := range findDuplication {
-				fmt.Printf("* '%+v' \n", vv)
+				// filter fields set as default from types
+				// need to filter some fields liek slug, title etc, find a smart way of doing it
+				if !vv.HideDefault {
+					res = append(res, fmt.Sprintf("** ContentTypeID: '%s'", vv.ContentTypeName))
+				}
 			}
-			fmt.Println()
 		}
 	}
 	return res

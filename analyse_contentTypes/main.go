@@ -291,8 +291,18 @@ func noticeLog(msg string) string {
 	return fmt.Sprintf("[Notice] 💡 - %s", msg)
 }
 
+func noticeLogf(format string, a ...interface{}) string {
+	msg := fmt.Sprintf("[Notice] 💡 - %s", format)
+	return fmt.Sprintf(msg, a)
+}
+
 func attentionLog(msg string) string {
 	return fmt.Sprintf("[Attention] 🔍 - %s", msg)
+}
+
+func attentionLogf(format string, a ...interface{}) string {
+	msg := fmt.Sprintf("[Attention] 🔍 - %s", format)
+	return fmt.Sprintf(msg, a)
 }
 
 func warningLog(msg string) string {
@@ -420,55 +430,23 @@ func iterateDirectory(path, ctDirectory string) []string {
 	return res
 }
 
-func main() {
-
-	var ctFilename, ctDirectory string
-	flag.StringVar(&ctFilename, "f", "", "Specify contentType JSON file.")
-	flag.StringVar(&ctDirectory, "d", "", "Specify directory of contentType JSON files.")
-
-	flag.Usage = func() {
-		fmt.Printf("Usage of our Program: \n")
-		fmt.Printf("./go-project -f /var/doc/MyContentTypeFile.json\n")
-		fmt.Println("")
-		fmt.Printf("How to generate it: \n")
-		fmt.Println("***")
-	}
-	flag.Parse()
-
-	if len(ctFilename) == 0 && len(ctDirectory) == 0 {
-		fmt.Println("parameter 'f' with filename or 'd' with directory required")
-		return
-	}
-
-	filesToParse := make([]string, 0, 10)
-	if len(ctFilename) != 0 {
-		if _, err := os.Stat(ctFilename); err != nil {
-			fmt.Printf("File '%s' does not exist \n", ctFilename)
-			return
+func fieldDuplicated(f Field, duplications map[string][]fieldValidation) []string {
+	res := make([]string, 0, 10)
+	if findDuplication, ok := duplications[f.ID]; ok {
+		if len(findDuplication) > 1 {
+			for _, vv := range findDuplication {
+				// filter fields set as default from types
+				// need to filter some fields liek slug, title etc, find a smart way of doing it
+				if !vv.HideDefault {
+					res = append(res, fmt.Sprintf("** ContentTypeID: '%s'", vv.ContentTypeName))
+				}
+			}
 		}
-		filesToParse = append(filesToParse, ctFilename)
-	} else if len(ctDirectory) != 0 {
-		if _, err := os.Stat(ctDirectory); err != nil {
-			fmt.Printf("Direcotry '%s' does not exist \n", ctDirectory)
-			return
-		}
-
-		currentDirectory, err := os.Getwd()
-		if err != nil {
-			fmt.Printf("%+v", err.Error())
-		}
-		currentDirectory = fmt.Sprintf("%s/", ctDirectory)
-		filesToParse = iterateDirectory(currentDirectory, ctDirectory)
-
 	}
-
-	for _, fileName := range filesToParse {
-		processJSONFile(fileName)
-	}
+	return res
 }
 
-func processJSONFile(ctFilename string) {
-
+func processJSONFile(ctFilename string, contentTypesParsed map[string][]contentTypeParsed) {
 	// read file
 	data, err := ioutil.ReadFile(ctFilename)
 	if err != nil {
@@ -490,7 +468,6 @@ func processJSONFile(ctFilename string) {
 	if len(obj.Items) == 0 && len(obj.ContentTypes) > 0 {
 		obj.Items = obj.ContentTypes
 	}
-
 	loopValidationErrors, nonOrphanContentTypes := validatereferncesLoop(obj)
 
 	fmt.Println()
@@ -508,10 +485,18 @@ func processJSONFile(ctFilename string) {
 	fmt.Printf("***** REPORT ******* \n")
 	fmt.Printf("\n")
 
+	// create aray of contenttypes of space to multispace checkup
+	ctItems := make([]contentTypeParsed, 0, 10)
 	errorReports := make(map[string]errorReport, len(obj.Items))
 
 	fieldDuplication := make(map[string][]fieldValidation, len(obj.Items))
 	for _, vItem := range obj.Items {
+
+		ctp := contentTypeParsed{
+			Name: vItem.Name,
+		}
+		ctp.Fields = make(map[string]string, len(vItem.Fields))
+		// ctItems = append(ctItems, ctp)
 
 		err := errorReport{
 			ContentTypeName: vItem.Name,
@@ -537,6 +522,10 @@ func processJSONFile(ctFilename string) {
 			4.- Standard Naming
 		*/
 		for _, vField := range vItem.Fields {
+
+			// add it as field to the multispace validation of fields
+			//ctp.Fields=append(ctp.Fields,vField.Name)
+			ctp.Fields[vField.Name] = vField.Name
 
 			// add validations functions  for fields here
 			validations, _ = missingReferenceValidation(vField, validations)
@@ -567,6 +556,8 @@ func processJSONFile(ctFilename string) {
 				fieldDuplication[vField.ID] = append(fieldDuplication[vField.ID], nFielValidation)
 			}
 		}
+		// add the the content type name and fields to validation array of space
+		ctItems = append(ctItems, ctp)
 
 		errMsg := make([]string, 0)
 		if existDesc, _ := missingDescription(vItem); existDesc {
@@ -625,6 +616,10 @@ func processJSONFile(ctFilename string) {
 		errorReports[vItem.Name] = err
 	}
 
+	// add contentTypes items to map of spaces
+	// to multispace validation
+	contentTypesParsed[obj.Items[0].Sys.Space.Sys.ID] = ctItems
+
 	keys := make([]string, 0, len(errorReports))
 	for k := range errorReports {
 		keys = append(keys, k)
@@ -668,18 +663,146 @@ func processJSONFile(ctFilename string) {
 
 }
 
-func fieldDuplicated(f Field, duplications map[string][]fieldValidation) []string {
-	res := make([]string, 0, 10)
-	if findDuplication, ok := duplications[f.ID]; ok {
-		if len(findDuplication) > 1 {
-			for _, vv := range findDuplication {
-				// filter fields set as default from types
-				// need to filter some fields liek slug, title etc, find a smart way of doing it
-				if !vv.HideDefault {
-					res = append(res, fmt.Sprintf("** ContentTypeID: '%s'", vv.ContentTypeName))
+type contentTypeParsed struct {
+	Name   string
+	Fields map[string]string
+}
+
+func main() {
+
+	var ctFilename, ctDirectory string
+	flag.StringVar(&ctFilename, "f", "", "Specify contentType JSON file.")
+	flag.StringVar(&ctDirectory, "d", "", "Specify directory of contentType JSON files.")
+
+	flag.Usage = func() {
+		fmt.Printf("Usage of our Program: \n")
+		fmt.Printf("./go-project -f /var/doc/MyContentTypeFile.json\n")
+		fmt.Println("")
+		fmt.Printf("How to generate it: \n")
+		fmt.Println("***")
+	}
+	flag.Parse()
+
+	if len(ctFilename) == 0 && len(ctDirectory) == 0 {
+		fmt.Println("parameter 'f' with filename or 'd' with directory required")
+		return
+	}
+
+	filesToParse := make([]string, 0, 10)
+	if len(ctFilename) != 0 {
+		if _, err := os.Stat(ctFilename); err != nil {
+			fmt.Printf("File '%s' does not exist \n", ctFilename)
+			return
+		}
+		filesToParse = append(filesToParse, ctFilename)
+	} else if len(ctDirectory) != 0 {
+		if _, err := os.Stat(ctDirectory); err != nil {
+			fmt.Printf("Direcotry '%s' does not exist \n", ctDirectory)
+			return
+		}
+
+		currentDirectory, err := os.Getwd()
+		if err != nil {
+			fmt.Printf("%+v", err.Error())
+		}
+		currentDirectory = fmt.Sprintf("%s/", ctDirectory)
+		filesToParse = iterateDirectory(currentDirectory, ctDirectory)
+
+	}
+
+	contentTypesParsed := make(map[string][]contentTypeParsed, 100)
+	for _, fileName := range filesToParse {
+		processJSONFile(fileName, contentTypesParsed)
+	}
+
+	multiSpaceValidations(contentTypesParsed)
+}
+
+func multiSpaceValidations(contentTypesParsed map[string][]contentTypeParsed) {
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println("*** Validating multispace reusabaility ** ")
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println("Content type naming repetetition")
+
+	doneRevisedTypes := make(map[string][]string, 100)
+
+	for spaceID, spaceContentTypes := range contentTypesParsed {
+		fmt.Println()
+		fmt.Println(noticeLogf("checking Space ID: '%s'", spaceID))
+		for _, spaceContentType := range spaceContentTypes {
+
+			// loop again is space map (skiping current key and show duplications)
+			for spaceIDToCheck, spaceContentTypesToCheck := range contentTypesParsed {
+
+				if spaceID != spaceIDToCheck {
+					// fmt.Printf("* Content type '%s' duplications found: \n", spaceType.Name)
+					for _, spaceContentTypeToCheck := range spaceContentTypesToCheck {
+
+						if spacesCheck, ok := doneRevisedTypes[spaceContentTypeToCheck.Name]; ok {
+
+							// check if the relation of spaces A<->B, b<-> was already done
+							spaceA := spacesCheck[0]
+							spaceB := spacesCheck[1]
+							if spaceIDToCheck == spaceA || spaceIDToCheck == spaceB {
+								continue
+							}
+						}
+						// doneRevisedTypes[spaceContentTypeToCheck.Name] = spaceContentTypeToCheck.Name
+						doneRevisedTypes[spaceContentTypeToCheck.Name] = []string{spaceID, spaceIDToCheck}
+
+						validationMsg := make([]string, 0, 10)
+						// validationMsg = append(validationMsg, fmt.Sprintf("Content type '%s' validations: ", spaceType.Name))
+						// check similar content Type name
+						if spaceContentType.Name == spaceContentTypeToCheck.Name {
+							//fmt.Println(noticeLogf("Content type '%s' duplicated name on space '%s'", spaceType.Name, spaceIDCheck))
+							// fmt.Printf("Content type '%s' duplicated name on space '%s' \n", spaceContentType.Name, spaceIDToCheck)
+							validationMsg = append(validationMsg, fmt.Sprintf("* Duplicated name on space '%s'", spaceIDToCheck))
+							// fmt.Println("Content type '" + spaceType.Name + "' duplicated name on space '" + spaceIDCheck + "'")
+							// fmt.Printf("%+v \n", spaceContentType.Fields)
+							// fmt.Printf("%+v \n", spaceContentTypeToCheck.Fields)
+						}
+
+						// fmt.Printf("%+v \n", spaceContentType.Fields)
+						// fmt.Printf("%+v \n", spaceContentTypeToCheck.Fields)
+						// for current origin conten type
+						// loop on fields and count how many similar fields are in content type destination
+						// if equal or > 2 show alert
+						repeatedFields := make([]string, 0, len(spaceContentType.Fields))
+						// counterSimilarFields := 0
+						for spaceContentTypeField := range spaceContentType.Fields {
+							if _, ok := spaceContentTypeToCheck.Fields[spaceContentTypeField]; ok {
+								// counterSimilarFields++
+								repeatedFields = append(repeatedFields, spaceContentTypeField)
+								// continue
+							}
+						}
+						if (len(spaceContentType.Fields) == len(spaceContentTypeToCheck.Fields)) || len(repeatedFields) > 2 {
+							//fmt.Printf("Content type '%s' with duplicated fields: \n", spaceContentType.Name)
+							// fmt.Printf("total fields 1: %d \n", len(spaceContentType.Fields))
+							// fmt.Printf("total fields 2: %d \n", len(spaceContentTypeToCheck.Fields))
+							// fmt.Printf("repetead fields: %s \n", strings.Join(repeatedFields, ", "))
+							// fmt.Printf("repetead fields count: %d \n", len(repeatedFields))
+							// fmt.Println()
+
+							validationMsg = append(validationMsg, fmt.Sprintf("* ContentType '%s', Space '%s' similar fields: %s", spaceContentTypeToCheck.Name, spaceIDToCheck, strings.Join(repeatedFields, ", ")))
+						}
+
+						if len(validationMsg) > 0 {
+							fmt.Printf("Content type '%s' validations: \n", spaceContentType.Name)
+							// fmt.Printf("Content type '%s' validations: \n", spaceContentTypeToCheck.Name)
+							for _, msg := range validationMsg {
+								fmt.Println(msg)
+							}
+							fmt.Println()
+						}
+
+					}
+					// fmt.Println()
 				}
 			}
 		}
+		// fmt.Println()
 	}
-	return res
 }

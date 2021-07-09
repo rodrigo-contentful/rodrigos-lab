@@ -13,10 +13,11 @@ go run main.go -f some/file/fileName.json
 ### by executable
 $ ./analyseContentTypes -f some/file/fileName.json
 
-### planned
+### planned validations
 
-- executable application
-- json file as parameter
+- Multispace: 
+  - similar types names between spaces
+  - similar types fields between spaces
 
 ## Example 
 

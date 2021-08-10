@@ -75,6 +75,7 @@ else
 
     python locales.py "$SPACE_ORIG"
 
+    # this can only create new locales, not update existing (default) locales
     while IFS= read -r line; do
     curl --location --request POST "https://api.contentful.com/spaces/$SPACE_DEST/environments/$ENV_DEST/locales" \
             --header 'Content-Type: application/vnd.contentful.management.v1+json' \

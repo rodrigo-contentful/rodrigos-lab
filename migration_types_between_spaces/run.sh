@@ -128,4 +128,4 @@ echo "******************************************************"
 echo "**** CREATE NEW SPACE entries"
 echo "******************************************************"
 
-contentful space --space-id "$SPACE_DEST" --environment-id "$ENV_DEST" import --skip-content-model --skip-content-publishing --content-file exported_content.json
+contentful space --space-id "$SPACE_DEST" --environment-id "$ENV_DEST" import --skip-content-model --content-file exported_content.json

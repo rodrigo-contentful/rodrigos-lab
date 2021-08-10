@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 ## IMPORTANT Before running:
 # This script is offer as it is with no responsability.
 # all spaces must have the same locale (the file try to migrate locaes also)

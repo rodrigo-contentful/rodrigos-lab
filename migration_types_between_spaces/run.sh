@@ -71,7 +71,7 @@ else
     curl --location --request GET "https://api.contentful.com/spaces/$SPACE_ORIG/environments/master/locales" \
                 --header "Authorization: Bearer $CMA_TOKEN" > "locales_$SPACE_ORIG.json"
 
-    python locales.py $SPACE_ORIG
+    python locales.py "$SPACE_ORIG"
 
     while IFS= read -r line; do
     curl --location --request POST "https://api.contentful.com/spaces/$SPACE_DEST/environments/$ENV_DEST/locales" \
@@ -95,7 +95,7 @@ for v in "${values[@]}"
 do
     # todo, add --filename SOMEFILENAME to better contentType export
     #echo $v
-    contentful space --space-id $SPACE_ORIG --management-token $CMA_TOKEN generate migration --content-type-id $v
+    contentful space --space-id "$SPACE_ORIG" --management-token "$CMA_TOKEN" generate migration --content-type-id "$v"
 done
 
 cd ..
@@ -108,7 +108,7 @@ echo "******************************************************"
 # queries of entries are done using a parameter based on CDA search examples:
 # https://www.contentful.com/developers/docs/references/content-delivery-api/#/reference/search-parameters
 
-contentful space --space-id $SPACE_ORIG --management-token $CMA_TOKEN export --skip-roles --skip-webhooks --include-drafts  --query-entries "'sys.contentType.sys.id[in]=$CSV_TYPES'" --content-file exported_content.json
+contentful space --space-id "$SPACE_ORIG" --management-token "$CMA_TOKEN" export --skip-roles --skip-webhooks --include-drafts  --query-entries "'sys.contentType.sys.id[in]=$CSV_TYPES'" --content-file exported_content.json
 
 echo ""
 echo "******************************************************"

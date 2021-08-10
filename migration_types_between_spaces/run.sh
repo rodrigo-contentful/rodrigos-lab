@@ -32,10 +32,11 @@ echo ""
     return 0
 }
 
-while getopts t:o:d:c:l:h: option
+while getopts e:t:o:d:c:l:h: option
 do
 case "${option}"
 in
+e) ENV_DEST=${OPTARG};;
 t) CMA_TOKEN=${OPTARG};;
 o) SPACE_ORIG=${OPTARG};;
 d) SPACE_DEST=${OPTARG};;
@@ -44,18 +45,19 @@ l) MIG_LOCALES=${OPTARG};;
 h)
     show_usage
     exit 1;;
-\?) echo "Invalid option: -"$OPTARG"" >&2
+\?) echo "Invalid option: -$OPTARG" >&2
     exit 1;;
 esac
 done
 
-echo "Space orig: "$SPACE_ORIG
-echo "Space dest: "$SPACE_DEST
-echo "Sapce dest Env: "$CSV_TYPES
-echo $MIG_LOCALES
+echo "Space orig: $SPACE_ORIG"
+echo "Space dest: $SPACE_DEST"
+echo "Space dest Env: $ENV_DEST"
+echo "Types to migrate: $CSV_TYPES"
+echo "Migrate locales: $MIG_LOCALES"
 
-if [ $MIG_LOCALES = 'no' ]; then
-    echo "Will NOTt migrarte locales"
+if [ "$MIG_LOCALES" = 'no' ]; then
+    echo "Will NOT migrate locales"
 else 
     
     # PART 1 - COPY LOCALES
@@ -72,7 +74,7 @@ else
     python locales.py $SPACE_ORIG
 
     while IFS= read -r line; do
-    curl --location --request POST "https://api.contentful.com/spaces/$SPACE_DEST/environments/master/locales" \
+    curl --location --request POST "https://api.contentful.com/spaces/$SPACE_DEST/environments/$ENV_DEST/locales" \
             --header 'Content-Type: application/vnd.contentful.management.v1+json' \
             --header "Authorization: Bearer $CMA_TOKEN" \
             --data-raw "$line"
@@ -115,7 +117,7 @@ echo "******************************************************"
 
 for filename in content_types/*; do
     #echo $filename
-    contentful space --space-id $SPACE_DEST migration --yes $filename   
+    contentful space --space-id "$SPACE_DEST" --environment-id "$ENV_DEST" migration --yes "$filename"
 done
 
 echo ""
@@ -123,4 +125,4 @@ echo "******************************************************"
 echo "**** CREATE NEW SPACE entries"
 echo "******************************************************"
 
-contentful space --space-id $SPACE_DEST import --skip-content-model --skip-content-publishing --content-file exported_content.json
+contentful space --space-id "$SPACE_DEST" --environment-id "$ENV_DEST" import --skip-content-model --skip-content-publishing --content-file exported_content.json

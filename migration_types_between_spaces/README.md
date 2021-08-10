@@ -14,6 +14,7 @@ Options:
 * -t  The Contentful management token to use
 * -o  The Origin Contentful space
 * -d  The Destination Contentful space
+* -e  The Destination environment to use, defaults to 'master'
 * -c  The list of types to migrate as csv
 * -l  Option to migrate locales: yes/no.
 * -h  Show help

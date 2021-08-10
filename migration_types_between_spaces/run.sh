@@ -32,14 +32,16 @@ echo ""
     return 0
 }
 
+ENV_DEST=master
+MIG_LOCALES=yes
 while getopts e:t:o:d:c:l:h: option
 do
 case "${option}"
 in
-e) ENV_DEST=${OPTARG};;
 t) CMA_TOKEN=${OPTARG};;
 o) SPACE_ORIG=${OPTARG};;
 d) SPACE_DEST=${OPTARG};;
+e) ENV_DEST=${OPTARG};;
 c) CSV_TYPES=${OPTARG};;
 l) MIG_LOCALES=${OPTARG};;
 h)

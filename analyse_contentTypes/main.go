@@ -572,48 +572,37 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 			}
 		}
 
-		// hash fields to check later
-		// ctp.Hash=Hash(ctp.FieldsCount)
-
 		// add the the content type name and fields to validation array of space
 		ctItems = append(ctItems, ctp)
 
 		errMsg := make([]string, 0)
 		if existDesc, _ := missingDescription(vItem); existDesc {
-			//errMsg = append(errMsg, "* 💡 [Notice] Description is missing.")
 			errMsg = append(errMsg, noticeLog("Description is missing."))
 		}
 		if len(vItem.Fields) == 1 {
-			//errMsg = append(errMsg, "* 💡 [Notice] Content type with a single fields: "+vItem.Fields[0].Name)
 			errMsg = append(errMsg, noticeLog("Content type with a single fields: "+vItem.Fields[0].Name))
 		}
 
 		if ref, ok := validations["references"]; ok && len(validations["references"]) > 0 {
-			//errMsg = append(errMsg, "* 🔍 [Warning] A reference field(s) lack validation, fields: "+ref)
 			errMsg = append(errMsg, warningLog("A reference field(s) lack validation, fields: "+ref))
 		}
 		if ref, ok := validations["omitted"]; ok && len(validations["omitted"]) > 0 {
-			//errMsg = append(errMsg, "* 💡 [Notice] Ommited from API response(ommited): "+ref)
 			errMsg = append(errMsg, noticeLog("Ommited from API response(ommited): "+ref))
 		}
 
 		if ref, ok := validations["disabled"]; ok && len(validations["disabled"]) > 0 {
-			//errMsg = append(errMsg, "* 💡 [Notice] Disabled in WebApp field(disabled): "+ref)
 			errMsg = append(errMsg, noticeLog("Disabled in WebApp field(disabled): "+ref))
 		}
 
 		if ref, ok := validations["htmlName"]; ok && len(validations["htmlName"]) > 0 {
-			//errMsg = append(errMsg, "* 💡 [Notice] "+ref)
 			errMsg = append(errMsg, attentionLog(ref))
 		}
 
 		if ref, ok := validations["fieldValidationByName"]; ok && len(validations["fieldValidationByName"]) > 0 {
-			//errMsg = append(errMsg, "* 💡 [Notice] "+ref)
 			errMsg = append(errMsg, attentionLog(ref))
 		}
 
 		if msg, ok := loopValidationErrors[vItem.Sys.ID]; ok {
-			//errMsg = append(errMsg, "* 🔍 [Warning] Infinite loop on content Type refernces: "+msg)
 			errMsg = append(errMsg, warningLog("Infinite loop on content Type refernces: "+msg))
 		}
 
@@ -641,7 +630,6 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 		Name:obj.Items[0].Sys.Space.Sys.ID,
 		ItemsCount:ctItems,
 	})
-	// contentTypesParsed[obj.Items[0].Sys.Space.Sys.ID] = ctItems
 
 	keys := make([]string, 0, len(errorReports))
 	for k := range errorReports {
@@ -667,7 +655,9 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 	for itemIndex,itemValue := range ctItems{
 
 		for _,itemStep := range ctItems[(itemIndex+1):]{	
-			SimilarContentTypesFormat(itemValue,itemStep,nameThreshhold, fieldsThreshold,"","")
+			if e:= similarContentTypesFormat(itemValue,itemStep,nameThreshhold, fieldsThreshold,"","");e!=nil{
+				fmt.Printf("%s", issueLog(e.Error()))
+			}
 				
 		}	
 	}
@@ -689,7 +679,9 @@ func multiSpaceValidations(contentTypesParsed []spaceParsed, nameThreshhold, fie
 
 			for _, firstSpaceValueType := range firstSpaceValue.ItemsCount {
 				for _, SecondSpaceValueType := range SecondSpaceValue.ItemsCount {
-					SimilarContentTypesFormat(firstSpaceValueType,SecondSpaceValueType,nameThreshhold, fieldsThreshold,firstSpaceValue.Name,SecondSpaceValue.Name)
+					if e:= similarContentTypesFormat(firstSpaceValueType,SecondSpaceValueType,nameThreshhold, fieldsThreshold,firstSpaceValue.Name,SecondSpaceValue.Name);e!=nil{
+						fmt.Printf("%s", issueLog(e.Error()))
+					}
 				}
 			}
 
@@ -707,35 +699,41 @@ func splitChars(s string) []string {
 }
 
 
-func SimilarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fieldsThreshold float64 ,spaceIdA, spaceIdB string){
+func similarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fieldsThreshold float64 ,spaceIdA, spaceIdB string) error{
 
 	// do text for itemA
-	testA := make([]string,0,len(itemA.Fields)+1)
+	fieldsAsTextA := make([]string,0,len(itemA.Fields)+1)
 	for _,vItemA := range itemA.Fields	{
-		rr22,_:=json.Marshal(&vItemA)
-		testA=append(testA,string(rr22))
+		vItemAMarshalled,e:=json.Marshal(&vItemA)
+		if e != nil{
+			return e
+		}
+		fieldsAsTextA=append(fieldsAsTextA,string(vItemAMarshalled))
 	}
 	
 	// do text for itemA
-	testB := make([]string,0,len(itemB.Fields)+1)
+	fieldsAsTextB := make([]string,0,len(itemB.Fields)+1)
 	for _,vItemB := range itemB.Fields	{
-		rr22,_:=json.Marshal(&vItemB)
-		testB=append(testB,string(rr22))
+		vItemBMarshalled,e:=json.Marshal(&vItemB)
+		if e != nil{
+			return e
+		}
+		fieldsAsTextB=append(fieldsAsTextB,string(vItemBMarshalled))
 	}
 
-	testAA := strings.Join(testA,"\n")
-	testBB := strings.Join(testB,"\n")
+	fieldsAsTextAJoined := strings.Join(fieldsAsTextA,"\n")
+	fieldsAsTextBJoined := strings.Join(fieldsAsTextB,"\n")
 	
 	// checking first if name has similarity
 	seqMatcherA := NewMatcher(splitChars(itemA.Name),splitChars(itemB.Name))
-	// if (seqMatcherA.QuickRatio() < nameThreshhold){
+	// Compare type naming ratio to threshold
 	if (seqMatcherA.Ratio() < nameThreshhold){
-		return
+		return nil
 	}
 
 	// now check similarity of fields
-	seqMatcher := NewMatcher(SplitLines(testAA),SplitLines(testBB))
-	// if (seqMatcher.QuickRatio() >= fieldsThreshold){
+	seqMatcher := NewMatcher(SplitLines(fieldsAsTextAJoined),SplitLines(fieldsAsTextBJoined))
+	// Compare fields ratio to threshold
 	if (seqMatcher.Ratio() >= fieldsThreshold){
 
 		if len(spaceIdA)!=0 || len(spaceIdB)!=0{
@@ -765,6 +763,7 @@ func SimilarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fi
 		}
 		fmt.Println("")
 	}
+	return nil
 }
 
 func main() {

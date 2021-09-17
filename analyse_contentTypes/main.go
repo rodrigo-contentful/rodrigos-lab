@@ -116,11 +116,10 @@ type spaceParsed struct {
 
 type contentTypeParsed struct {
 	Name   string
-	FieldsCount []fieldItemsHashCheck
-	Hash []byte
+	Fields []ItemFieldsCheck
 }
 
-type fieldItemsHashCheck struct {
+type ItemFieldsCheck struct {
 	Type        string `json:"type"`
 	Localized   bool   `json:"localized"`
 	Required    bool   `json:"required"`
@@ -467,15 +466,7 @@ func fieldDuplicated(f Field, duplications map[string][]fieldValidation) []strin
 	return res
 }
 
-// func hash(s []fieldItemsHashCheck) []byte {
-//     var b bytes.Buffer
-//     gob.NewEncoder(&b).Encode(s)
-//     return b.Bytes()
-// }
-
-
 func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameThreshhold, fieldsThreshold float64) []spaceParsed {
-// func processJSONFile(ctFilename string, contentTypesParsed map[string][]contentTypeParsed) {
 	// read file
 	data, err := ioutil.ReadFile(ctFilename)
 	if err != nil {
@@ -519,14 +510,13 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 	errorReports := make(map[string]errorReport, len(obj.Items))
 
 	fieldDuplication := make(map[string][]fieldValidation, len(obj.Items))
+	// iterate on each content type
 	for _, vItem := range obj.Items {
 
 		ctp := contentTypeParsed{
 			Name: vItem.Name,
 		}
-		// ctp.FieldsCount = make(map[string]int, len(vItem.Fields))
-		// ctItems = append(ctItems, ctp)
-
+		
 		err := errorReport{
 			ContentTypeName: vItem.Name,
 			ContentTypeID:   vItem.Sys.ID,
@@ -542,17 +532,10 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 
 		validations := make(map[string]string, 100)
 
-		/*
-			Steps
-
-			1.- Identify microcpy - HTML elements labels
-			2.- Identify CTA
-			3.- Duplicated medias
-			4.- Standard Naming
-		*/
+		// iterate on type fields
 		for _, vField := range vItem.Fields {
 
-			ctp.FieldsCount = append(ctp.FieldsCount, fieldItemsHashCheck{
+			ctp.Fields = append(ctp.Fields, ItemFieldsCheck{
 				Type:vField.Type,
 				Localized:vField.Localized,
 				Required:vField.Required,
@@ -727,15 +710,15 @@ func splitChars(s string) []string {
 func SimilarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fieldsThreshold float64 ,spaceIdA, spaceIdB string){
 
 	// do text for itemA
-	testA := make([]string,0,len(itemA.FieldsCount)+1)
-	for _,vItemA := range itemA.FieldsCount	{
+	testA := make([]string,0,len(itemA.Fields)+1)
+	for _,vItemA := range itemA.Fields	{
 		rr22,_:=json.Marshal(&vItemA)
 		testA=append(testA,string(rr22))
 	}
 	
 	// do text for itemA
-	testB := make([]string,0,len(itemB.FieldsCount)+1)
-	for _,vItemB := range itemB.FieldsCount	{
+	testB := make([]string,0,len(itemB.Fields)+1)
+	for _,vItemB := range itemB.Fields	{
 		rr22,_:=json.Marshal(&vItemB)
 		testB=append(testB,string(rr22))
 	}
@@ -763,7 +746,7 @@ func SimilarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fi
 		fmt.Printf("Similarity of name: %.0f %s\n",math.Ceil(seqMatcherA.Ratio()*100),"%")
 		fmt.Printf("Similarity of fields: %.0f %s\n",math.Ceil(seqMatcher.Ratio()*100),"%")
 		fmt.Printf("Fields: \n")
-		for fieldIndex,fieldName := range itemA.FieldsCount{
+		for fieldIndex,fieldName := range itemA.Fields{
 			fmt.Printf("A%d .- Type: %s\n",(fieldIndex+1),fieldName.Type)
 			fmt.Printf("     Required: %s\n",strconv.FormatBool(fieldName.Required))
 			fmt.Printf("     Omitted: %s\n",strconv.FormatBool(fieldName.Omitted))
@@ -772,7 +755,7 @@ func SimilarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fi
 			fmt.Println("")
 		}
 		fmt.Println("")
-		for fieldIndex,fieldName := range itemB.FieldsCount{
+		for fieldIndex,fieldName := range itemB.Fields{
 			fmt.Printf("B%d .- Type: %s\n",(fieldIndex+1),fieldName.Type)
 			fmt.Printf("     Required: %s\n",strconv.FormatBool(fieldName.Required))
 			fmt.Printf("     Omitted: %s\n",strconv.FormatBool(fieldName.Omitted))

@@ -177,6 +177,56 @@ func missingReferenceValidation(field Field, validations map[string]string) (map
 	return validations, nil
 }
 
+func brokenReferenceValidation(field Field,obj ModelItems, validations map[string]string) (map[string]string, error) {
+	if _, ok := validations["broken_references"]; !ok {
+		validations["broken_references"] = ""
+	}
+	switch field.Type {
+	case "Link":
+		if len(field.Validations) != 0 && field.Linktype != "Asset" {
+			for _,ctReferenced := range field.Validations{
+				for _,ctIdsReferenced := range ctReferenced.Linkcontenttype{
+					notFoundFlag:=true
+					for _, vItem := range obj.Items {
+						if ctIdsReferenced == vItem.Sys.ID{
+							notFoundFlag=false
+							break
+						}
+					}
+					if notFoundFlag{
+						if validations["broken_references"] == "" {
+							validations["broken_references"] = fmt.Sprintf("%s", ctIdsReferenced)
+						} else {
+							validations["broken_references"] = fmt.Sprintf("%s,%s", validations["broken_references"], ctIdsReferenced)
+						}
+					}
+				}
+			}
+		}
+		break
+	// case "Array":
+	// 	// if array items are Symbol, is a list
+	// 	// els if items are Link, is a one to many ref
+	
+	// 	if len(field.Items.Validations) == 0 {
+	// 		errIndex := "references"
+	// 		if field.Items.Type == "Symbol" {
+	// 			// list
+	// 			errIndex = "list"
+	// 		} 
+	// 		if validations[errIndex] == "" {
+	// 			validations[errIndex] = fmt.Sprintf("%s", field.Name)
+	// 		} else {
+	// 			validations[errIndex] = fmt.Sprintf("%s,%s", validations[errIndex], field.Name)
+	// 		}
+	// 	}
+	// 	break
+	}
+
+	// validations["fieldValidationByName"] = fmt.Sprintf("Possible validation missing: field name '%s' matches a Contentful text validation '%s'", field.Name, fieldValidName)
+	return validations, nil
+}
+
 // textFieldValidationByName Based on a field name match a contentful field validation
 func textFieldValidationByName(field Field, validations map[string]string) (map[string]string, error) {
 
@@ -555,6 +605,7 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 			})
 				// add validations functions  for fields here
 			validations, _ = missingReferenceValidation(vField, validations)
+			validations, _ = brokenReferenceValidation(vField,obj, validations)
 			validations, _ = omittedValidation(vField, validations)
 			validations, _ = disabledValidation(vField, validations)
 			validations, _ = fieldNameAsHTMLElement(vField, validations)
@@ -599,6 +650,9 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 		}
 		if ref, ok := validations["list"]; ok && len(validations["list"]) > 0 {
 			errMsg = append(errMsg, warningLog("A List field(s) lack validation, fields: "+ref))
+		}
+		if ref, ok := validations["broken_references"]; ok && len(validations["broken_references"]) > 0 {
+			errMsg = append(errMsg, issueLog("Broken ContentType references: "+ref))
 		}
 		if ref, ok := validations["omitted"]; ok && len(validations["omitted"]) > 0 {
 			errMsg = append(errMsg, noticeLog("Ommited from API response(ommited): "+ref))

@@ -21,12 +21,13 @@ $ ./analyseContentTypes -f some/file/fileName.json
 
 #### ContentType and Fields validations
   - Look for validations based on fields names: "email","e-mail", "phone", "telephone", "mobile", "url", "link", "date""time"
+  - Show broken references, when a reference field has links but ContentTypes do not exist
 
 ### planned validations
 
-- Many assets validation, shows as lack of validations on report 
-- Equal content types 
-- Statistics of types repetition
+- Many assets validation, shows as lack of validations on report
+- Statistics of types repetien
+
 
 
 ## Example 

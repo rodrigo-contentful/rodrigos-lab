@@ -141,6 +141,9 @@ func missingReferenceValidation(field Field, validations map[string]string) (map
 	if _, ok := validations["references"]; !ok {
 		validations["references"] = ""
 	}
+	if _, ok := validations["list"]; !ok {
+		validations["list"] = ""
+	}
 
 	switch field.Type {
 	case "Link":
@@ -153,11 +156,19 @@ func missingReferenceValidation(field Field, validations map[string]string) (map
 		}
 		break
 	case "Array":
+		// if array items are Symbol, is a list
+		// els if items are Link, is a one to many ref
+	
 		if len(field.Items.Validations) == 0 {
-			if validations["references"] == "" {
-				validations["references"] = fmt.Sprintf("%s", field.Name)
+			errIndex := "references"
+			if field.Items.Type == "Symbol" {
+				// list
+				errIndex = "list"
+			} 
+			if validations[errIndex] == "" {
+				validations[errIndex] = fmt.Sprintf("%s", field.Name)
 			} else {
-				validations["references"] = fmt.Sprintf("%s,%s", validations["references"], field.Name)
+				validations[errIndex] = fmt.Sprintf("%s,%s", validations[errIndex], field.Name)
 			}
 		}
 		break
@@ -317,22 +328,22 @@ func doReferenceTree(validationRefs map[string][]string, ToVisit []string, visit
 
 // noticeLog print log Notice
 func noticeLog(msg string) string {
-	return fmt.Sprintf("[Notice] 💡 - %s", msg)
+	return fmt.Sprintf("* 💡 [Notice] - %s", msg)
 }
 
 // attentionLog print log Attention
 func attentionLog(msg string) string {
-	return fmt.Sprintf("[Attention] 🔍 - %s", msg)
+	return fmt.Sprintf("* 🔍 [Attention] - %s", msg)
 }
 
 // warningLog print log Warning
 func warningLog(msg string) string {
-	return fmt.Sprintf("[Warning] 🏮 - %s", msg)
+	return fmt.Sprintf("* 🏮 [Warning] - %s", msg)
 }
 
 // issueLog print log Issue
 func issueLog(msg string) string {
-	return fmt.Sprintf("[Issue] ⛔ - %s", msg)
+	return fmt.Sprintf("* ⛔ [Issue] - %s", msg)
 }
 
 // validatereferncesLoop inspect the references to find loops
@@ -586,6 +597,9 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 		if ref, ok := validations["references"]; ok && len(validations["references"]) > 0 {
 			errMsg = append(errMsg, warningLog("A reference field(s) lack validation, fields: "+ref))
 		}
+		if ref, ok := validations["list"]; ok && len(validations["list"]) > 0 {
+			errMsg = append(errMsg, warningLog("A List field(s) lack validation, fields: "+ref))
+		}
 		if ref, ok := validations["omitted"]; ok && len(validations["omitted"]) > 0 {
 			errMsg = append(errMsg, noticeLog("Ommited from API response(ommited): "+ref))
 		}
@@ -603,21 +617,21 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 		}
 
 		if msg, ok := loopValidationErrors[vItem.Sys.ID]; ok {
-			errMsg = append(errMsg, warningLog("Infinite loop on content Type refernces: "+msg))
+			errMsg = append(errMsg, warningLog("Loop on referenced ContentTypes: "+msg))
 		}
 
 		// is orphan
 		if _, ok := nonOrphanContentTypes[vItem.Sys.ID]; !ok {
-			errMsg = append(errMsg, warningLog("Content type not referenced(Orphan)."))
+			errMsg = append(errMsg, warningLog("Orphan ContentType."))
 		}
 
 		// no display field selected
 		if len(vItemDisplayfield) == 0 {
-			errMsg = append(errMsg, issueLog("Content type ha sno title field."))
+			errMsg = append(errMsg, issueLog("ContentType with not assigned title."))
 		}
 
 		if len(errMsg) == 0 {
-			err.Errors = []string{"* 🥇 No  errors."}
+			err.Errors = []string{"* 🥇 No issues found."}
 		} else {
 			err.Errors = errMsg
 		}

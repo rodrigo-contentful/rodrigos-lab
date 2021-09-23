@@ -10,14 +10,24 @@ go.1.14 up
 
 go run main.go -f some/file/fileName.json
 
-### by executable
+### by executable 
 $ ./analyseContentTypes -f some/file/fileName.json
+
+### Validations
+
+#### Similar types
+  - Sequence matcher for content type naming, lower threshold set to 70 %
+  - Similarity of types base on fields: Type, Required, Localized, Disabled and Omited
+
+#### ContentType and Fields validations
+  - Look for validations based on fields names: "email","e-mail", "phone", "telephone", "mobile", "url", "link", "date""time"
 
 ### planned validations
 
-- Multispace: 
-  - similar types names between spaces
-  - similar types fields between spaces
+- Many assets validation, shows as lack of validations on report 
+- Equal content types 
+- Statistics of types repetition
+
 
 ## Example 
 
@@ -70,3 +80,6 @@ $ ./analyseContentTypes -f some/file/fileName.json
     ContentType name: Lesson > Image
     ContentType id: lessonImage
     No  errors.
+
+# references
+https://github.com/pmezard/go-difflib/blob/v1.0.0/difflib/difflib_test.go

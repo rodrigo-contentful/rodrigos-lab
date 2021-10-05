@@ -7,16 +7,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
-	"strconv"
 	"time"
-	// "bytes"
-	// "encoding/gob"
-	"math"
 )
 
 // lower limit for similarity of type names for similitud comparison
@@ -120,6 +117,7 @@ type contentTypeParsed struct {
 }
 
 type ItemFieldsCheck struct {
+	Name string `json:"-"`
 	Type        string `json:"type"`
 	Localized   bool   `json:"localized"`
 	Required    bool   `json:"required"`
@@ -204,26 +202,9 @@ func brokenReferenceValidation(field Field,obj ModelItems, validations map[strin
 			}
 		}
 		break
-	// case "Array":
-	// 	// if array items are Symbol, is a list
-	// 	// els if items are Link, is a one to many ref
-	
-	// 	if len(field.Items.Validations) == 0 {
-	// 		errIndex := "references"
-	// 		if field.Items.Type == "Symbol" {
-	// 			// list
-	// 			errIndex = "list"
-	// 		} 
-	// 		if validations[errIndex] == "" {
-	// 			validations[errIndex] = fmt.Sprintf("%s", field.Name)
-	// 		} else {
-	// 			validations[errIndex] = fmt.Sprintf("%s,%s", validations[errIndex], field.Name)
-	// 		}
-	// 	}
-	// 	break
+
 	}
 
-	// validations["fieldValidationByName"] = fmt.Sprintf("Possible validation missing: field name '%s' matches a Contentful text validation '%s'", field.Name, fieldValidName)
 	return validations, nil
 }
 
@@ -355,17 +336,12 @@ func doReferenceTree(validationRefs map[string][]string, ToVisit []string, visit
 	} else {
 
 		if existVisited(visited, ToVisit[indexToCheck]) {
-
 			visited = append(visited, ToVisit[indexToCheck])
-
 			return true, visited
 		}
 		visited = append(visited, ToVisit[indexToCheck])
-
 		for ToVisitK := range subNode {
-
 			ok, visited := doReferenceTree(validationRefs, subNode, visited, ToVisitK)
-
 			if ok {
 				// if true exit
 				return ok, visited
@@ -452,15 +428,11 @@ func validatereferncesLoop(obj ModelItems) (map[string]string, map[string]string
 		}
 
 		for k, v := range validationRefs {
-
 			visited := make([]string, 0, 0)
 			visited = append(visited, k)
-
 			// split child nodes and loop
 			for index, ctSubnode := range v {
-				//
 				if ctSubnode != "" {
-
 					ok, visited := doReferenceTree(validationRefs, v, visited, index)
 					if ok {
 						// exist key
@@ -527,7 +499,7 @@ func fieldDuplicated(f Field, duplications map[string][]fieldValidation) []strin
 	return res
 }
 
-func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameThreshhold, fieldsThreshold float64) []spaceParsed {
+func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameThreshhold, fieldsThreshold float64,outputHtml bool) ([]spaceParsed,MainHtmlReport) {
 	// read file
 	data, err := ioutil.ReadFile(ctFilename)
 	if err != nil {
@@ -551,20 +523,14 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 	}
 	loopValidationErrors, nonOrphanContentTypes := validatereferncesLoop(obj)
 
-	fmt.Println()
-	fmt.Println()
-	fmt.Printf("***************************************************************\n")
-	fmt.Println()
-	fmt.Printf("** Analysis Report Space '%s' **\n", obj.Items[0].Sys.Space.Sys.ID)
-	fmt.Printf("Description:\n")
-	fmt.Printf(noticeLog("Good practice/recomendation.\n"))
-	fmt.Printf(attentionLog("Something to have a look at.\n"))
-	fmt.Printf(warningLog("Possible issue.\n"))
-	fmt.Printf(issueLog("Something to consider changing.\n"))
-	fmt.Printf("\n")
-	fmt.Printf("Total ContentTypes: %d\n", len(obj.Items))
-	fmt.Printf("***** REPORT ******* \n")
-	fmt.Printf("\n")
+	rows := make(map[string]errorReport,len(obj.Items))
+
+	rep:=MainHtmlReport{
+		Title: "Analysis Report Space",
+		SpaceID: obj.Items[0].Sys.Space.Sys.ID,
+		TotalTypes: len(obj.Items),
+		ItemsRows: rows,
+	}
 
 	// create aray of contenttypes of space to multispace checkup
 	ctItems := make([]contentTypeParsed, 0, 10)
@@ -597,6 +563,7 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 		for _, vField := range vItem.Fields {
 
 			ctp.Fields = append(ctp.Fields, ItemFieldsCheck{
+				Name: vField.Name,
 				Type:vField.Type,
 				Localized:vField.Localized,
 				Required:vField.Required,
@@ -692,6 +659,9 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 		errorReports[vItem.Name] = err
 	}
 
+	// add errors to html report
+	rep.ItemsRows=errorReports
+
 	// add contentTypes items to map of spaces
 	// to multispace validation
 	contentTypesParsed = append(contentTypesParsed,spaceParsed{
@@ -699,62 +669,46 @@ func processJSONFile(ctFilename string, contentTypesParsed []spaceParsed, nameTh
 		ItemsCount:ctItems,
 	})
 
-	keys := make([]string, 0, len(errorReports))
-	for k := range errorReports {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	for _, k := range keys {
-		err := errorReports[k]
-
-		fmt.Println("ContentType name: " + err.ContentTypeName)
-		fmt.Println("ContentType id: " + err.ContentTypeID)
-		for _, errMsg := range err.Errors {
-			fmt.Println(errMsg)
-		}
-		fmt.Println("")
-	}
-
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("Similar Content Types found:")
-	fmt.Println("")
 	for itemIndex,itemValue := range ctItems{
 
 		for _,itemStep := range ctItems[(itemIndex+1):]{	
-			if e:= similarContentTypesFormat(itemValue,itemStep,nameThreshhold, fieldsThreshold,"","");e!=nil{
-				fmt.Printf("%s", issueLog(e.Error()))
+			e,simiTypes:= similarContentTypesFormat(itemValue,itemStep,nameThreshhold, fieldsThreshold,"","",outputHtml)
+			if e!=nil{
+				outputText(outputHtml,"%s", issueLog(e.Error()))
 			}
-				
+			if simiTypes.ContentTypeNameA != ""{
+				simiTypes.SpaceA = obj.Items[0].Sys.Space.Sys.ID
+				simiTypes.SpaceB = obj.Items[0].Sys.Space.Sys.ID
+				rep.ItemsSimilar=append(rep.ItemsSimilar,simiTypes) 
+			}
 		}	
 	}
 
-	return contentTypesParsed
+	return contentTypesParsed,rep
 }
 
-func multiSpaceValidations(contentTypesParsed []spaceParsed, nameThreshhold, fieldsThreshold float64 ) {
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("*** Validating multispace reusabaility ** ")
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("Content type naming repetetition")
-
+func multiSpaceValidations(contentTypesParsed []spaceParsed, nameThreshhold, fieldsThreshold float64,outputHtml bool, rep MainHtmlReport ) MainHtmlReport {
 	for firstSpaceIndex,firstSpaceValue := range contentTypesParsed{
 
-		for _,SecondSpaceValue := range contentTypesParsed[(firstSpaceIndex+1):]{	
+		for _,SecondSpaceValue := range contentTypesParsed[(firstSpaceIndex+1):]{
 
 			for _, firstSpaceValueType := range firstSpaceValue.ItemsCount {
 				for _, SecondSpaceValueType := range SecondSpaceValue.ItemsCount {
-					if e:= similarContentTypesFormat(firstSpaceValueType,SecondSpaceValueType,nameThreshhold, fieldsThreshold,firstSpaceValue.Name,SecondSpaceValue.Name);e!=nil{
-						fmt.Printf("%s", issueLog(e.Error()))
+					e,simiTypes:= similarContentTypesFormat(firstSpaceValueType,SecondSpaceValueType,nameThreshhold, fieldsThreshold,firstSpaceValue.Name,SecondSpaceValue.Name,outputHtml)
+					if e!=nil{
+						outputText(outputHtml,"%s", issueLog(e.Error()))
+					}
+					if simiTypes.ContentTypeNameA != ""{
+						simiTypes.SpaceA = firstSpaceValue.Name
+						simiTypes.SpaceB = SecondSpaceValue.Name
+						rep.ItemsSimilar=append(rep.ItemsSimilar,simiTypes) 
 					}
 				}
 			}
 
 		}	
 	}
+	return rep
 }
 
 func splitChars(s string) []string {
@@ -767,14 +721,16 @@ func splitChars(s string) []string {
 }
 
 
-func similarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fieldsThreshold float64 ,spaceIdA, spaceIdB string) error{
+func similarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fieldsThreshold float64 ,spaceIdA, spaceIdB string,outputHtml bool) (error,SimilarTypes){
+
+	SimiTypes := SimilarTypes{}
 
 	// do text for itemA
 	fieldsAsTextA := make([]string,0,len(itemA.Fields)+1)
 	for _,vItemA := range itemA.Fields	{
 		vItemAMarshalled,e:=json.Marshal(&vItemA)
 		if e != nil{
-			return e
+			return e,SimiTypes
 		}
 		fieldsAsTextA=append(fieldsAsTextA,string(vItemAMarshalled))
 	}
@@ -784,7 +740,7 @@ func similarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fi
 	for _,vItemB := range itemB.Fields	{
 		vItemBMarshalled,e:=json.Marshal(&vItemB)
 		if e != nil{
-			return e
+			return e,SimiTypes
 		}
 		fieldsAsTextB=append(fieldsAsTextB,string(vItemBMarshalled))
 	}
@@ -796,7 +752,7 @@ func similarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fi
 	seqMatcherA := NewMatcher(splitChars(itemA.Name),splitChars(itemB.Name))
 	// Compare type naming ratio to threshold
 	if (seqMatcherA.Ratio() < nameThreshhold){
-		return nil
+		return nil,SimiTypes
 	}
 
 	// now check similarity of fields
@@ -804,50 +760,71 @@ func similarContentTypesFormat(itemA,itemB contentTypeParsed, nameThreshhold, fi
 	// Compare fields ratio to threshold
 	if (seqMatcher.Ratio() >= fieldsThreshold){
 
-		if len(spaceIdA)!=0 || len(spaceIdB)!=0{
-			fmt.Printf("Space Id's: '%s' , '%s'\n",spaceIdA, spaceIdB)
-		}
+		// create array of similar fields for the current xontent type
+		simiFields := make(map[int]SimilarField,len(itemA.Fields))
 
-		fmt.Printf("Content Types: '%s' , '%s'\n",itemA.Name, itemB.Name)
-		fmt.Printf("Similarity of name: %.0f %s\n",math.Ceil(seqMatcherA.Ratio()*100),"%")
-		fmt.Printf("Similarity of fields: %.0f %s\n",math.Ceil(seqMatcher.Ratio()*100),"%")
-		fmt.Printf("Fields: \n")
 		for fieldIndex,fieldName := range itemA.Fields{
-			fmt.Printf("A%d .- Type: %s\n",(fieldIndex+1),fieldName.Type)
-			fmt.Printf("     Required: %s\n",strconv.FormatBool(fieldName.Required))
-			fmt.Printf("     Omitted: %s\n",strconv.FormatBool(fieldName.Omitted))
-			fmt.Printf("     Disabled: %s\n",strconv.FormatBool(fieldName.Disabled))
-			fmt.Printf("     Localized: %s\n",strconv.FormatBool(fieldName.Localized))
-			fmt.Println("")
+			
+			simiItem:= SimilarSingleItem{
+				Name: fieldName.Name,
+				Type : fieldName.Type,
+				Required:fieldName.Required,
+				Omitted:fieldName.Omitted,
+				Disabled:fieldName.Disabled,
+				Localized:fieldName.Localized,
+			}
+			
+			simiFields[fieldIndex]= SimilarField{
+				ItemA: simiItem,
+			}
 		}
-		fmt.Println("")
+		
 		for fieldIndex,fieldName := range itemB.Fields{
-			fmt.Printf("B%d .- Type: %s\n",(fieldIndex+1),fieldName.Type)
-			fmt.Printf("     Required: %s\n",strconv.FormatBool(fieldName.Required))
-			fmt.Printf("     Omitted: %s\n",strconv.FormatBool(fieldName.Omitted))
-			fmt.Printf("     Disabled: %s\n",strconv.FormatBool(fieldName.Disabled))
-			fmt.Printf("     Localized: %s\n",strconv.FormatBool(fieldName.Localized))
-			fmt.Println("")
+						
+			simiItem:= SimilarSingleItem{
+				Name : fieldName.Name,
+				Type : fieldName.Type,
+				Required:fieldName.Required,
+				Omitted:fieldName.Omitted,
+				Disabled:fieldName.Disabled,
+				Localized:fieldName.Localized,
+			}
+
+			if field,ok := simiFields[fieldIndex]; ok {
+				field.ItemB= simiItem
+				simiFields[fieldIndex]=field
+			}
 		}
-		fmt.Println("")
+		
+
+		SimiTypes.SpaceA= spaceIdA
+		SimiTypes.SpaceB= spaceIdB
+		SimiTypes.ContentTypeNameA= itemA.Name
+		SimiTypes.ContentTypeNameB= itemB.Name
+		SimiTypes.NameSimilarity= fmt.Sprintf("Similarity of name: %.0f %s\n",math.Ceil(seqMatcherA.Ratio()*100),"%")
+		SimiTypes.FieldsSimilarity= fmt.Sprintf("Similarity of fields: %.0f %s\n",math.Ceil(seqMatcher.Ratio()*100),"%")
+		SimiTypes.SimilarFields=simiFields
 	}
-	return nil
+	return nil,SimiTypes
 }
 
 func main() {
 
 	var ctFilename, ctDirectory string
 	var treshholdName,treshholdFields float64
+	var outputHtml bool
 	flag.StringVar(&ctFilename, "f", "", "Specify contentType JSON file.")
 	flag.StringVar(&ctDirectory, "d", "", "Specify directory of contentType JSON files.")
 	flag.Float64Var(&treshholdName, "tn", simLowerLimitPrecentageName, "Precentage treshhold for naming matching, default 75%")
 	flag.Float64Var(&treshholdFields, "tf", simLowerLimitPrecentageFields, "Precentage treshhold for fields matching, default 85%")
+	flag.BoolVar(&outputHtml,"html",false,"Type of output. [html,txt(default)")
 
 	flag.Usage = func() {
 		fmt.Println()
 		fmt.Println("Options:")
 		fmt.Println("  -f  Content type json to parse.")
 		fmt.Println("  -d  Folder of Content types json to parse.(multispace)")
+		fmt.Println("  -html Output as html.")
 		fmt.Println("  -tn  Precentage treshhold for naming matching, default 75%")
 		fmt.Println("  -tf  Precentage treshhold for fields matching, default 85%")
 		fmt.Println("")
@@ -886,13 +863,116 @@ func main() {
 
 	}
 
-	contentTypesParsed := make([]spaceParsed,0, 100)
-	for _, fileName := range filesToParse {
-		contentTypesParsed=processJSONFile(fileName, contentTypesParsed,treshholdName,treshholdFields)
+	rep := MainHtmlReport{}
+	spacesParsed := make([]MainHtmlReport,0, len(filesToParse))
+	contentTypesParsed := make([]spaceParsed,0, len(filesToParse))
+	for _, fileName := range filesToParse {	
+		contentTypesParsed,rep=processJSONFile(fileName, contentTypesParsed,treshholdName,treshholdFields,outputHtml)
+		spacesParsed=append(spacesParsed, rep)
 	}
 
-	multiSpaceValidations(contentTypesParsed,treshholdName,treshholdFields)
+	repp := MainHtmlReport{}
+	spacesParsed1 := make([]MainHtmlReport,0, len(filesToParse))
+	repp=multiSpaceValidations(contentTypesParsed,treshholdName,treshholdFields,outputHtml,repp)
+	
+	// only add to slide of multispace, ir any reult exist from the multispace validator
+	if len(repp.ItemsSimilar)>0{
+		spacesParsed1=append(spacesParsed1, repp)
+	}
+	
 
+ 	templatePageHeader(spacesParsed,spacesParsed1,outputHtml)
+
+}
+
+func outputText(html bool,format string, a ...interface{}){
+	res:=fmt.Sprintf(format,a...)
+	if (html){
+		res= fmt.Sprintf("<div>%s</div>",res)	
+	}
+	fmt.Println(res)
+}
+
+type SimilarSingleItem struct{
+	Name string
+	Type string
+	Required bool
+	Omitted bool
+	Disabled bool
+	Localized bool
+}
+
+type SimilarField struct{
+	ItemA SimilarSingleItem
+	ItemB SimilarSingleItem
+}
+
+
+type SimilarTypes struct{
+	SpaceA string
+	SpaceB string
+	ContentTypeNameA string
+	ContentTypeNameB string
+	NameSimilarity string
+	FieldsSimilarity string
+	SimilarFields map[int]SimilarField
+}
+
+
+type ItemsRow struct{
+	ContentTypeName string
+	ContentTypeID string
+	Messages []string
+}
+
+type MainHtmlReport struct{
+	Title string
+	SpaceID string
+	TotalTypes int
+	ItemsRows map[string]errorReport
+	ItemsSimilar []SimilarTypes
+}
+
+func templatePageHeader(spaces []MainHtmlReport,multiSpaces []MainHtmlReport, outputHtml bool){
+
+	check := func(err error) {
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+
+templateFile := "./report.gotxt"
+outputFile := "./myfile.txt"
+if outputHtml{
+	templateFile = "./report.gohtml"
+	outputFile = "./myfile.html"
+}
+
+
+	t, err := template.ParseFiles(templateFile)
+	check(err)
+
+	
+	f, err := os.Create(outputFile)
+    if err != nil {
+        fmt.Println("create file: ", err)
+        return
+    }
+
+	var pages = map[string][]MainHtmlReport{
+		"spaces":spaces,
+		"multiSpaces":multiSpaces,
+	}
+	
+    err = t.Execute(f, pages)
+    if err != nil {
+        fmt.Print("execute: ", err)
+        return
+    }
+    f.Close()
+
+	fmt.Printf("Done, report file: %s \n",outputFile)
 }
 
 

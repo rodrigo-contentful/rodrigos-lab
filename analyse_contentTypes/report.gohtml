@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Analysis Report</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+
+  <body>
+    {{ range.spaces }}
+	<div class="container">
+		<div>
+			<br />
+		<h3>** Analysis Report for space <a href="https://app.contentful.com/spaces/{{.SpaceID}}"  target="_blank" class="link-primary">"{{.SpaceID}}"</a> **</h3>
+		<div>Description:</div>
+		<div>* 💡 [Notice] - Good practice/recomendation.</div>
+		<div>* 🔍 [Attention] - Something to have a look at.</div>
+		<div>* 🏮 [Warning] - Possible issue.</div>
+		<div>* ⛔ [Issue] - Something to consider changing.</div>
+		<br />
+		<p>Total ContentTypes: {{.TotalTypes}}</p>
+		</div>
+
+		
+		<div class="accordion" id="accordionExample">
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="headingValidation_{{.SpaceID}}">
+				<button
+					class="accordion-button"
+					type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#collapseValidation_{{.SpaceID}}"
+					aria-expanded="true"
+					aria-controls="collapseValidation_{{.SpaceID}}"
+				>
+					<h5 class="card-title">Content Type validations for space <a href="https://app.contentful.com/spaces/{{.SpaceID}}"  target="_blank" class="link-primary">"{{.SpaceID}}"</a></h5>
+					{{$spaceID := .SpaceID}}
+				</button>
+				</h2>
+				<div
+				id="collapseValidation_{{.SpaceID}}"
+				class="accordion-collapse collapse"
+				aria-labelledby="headingValidation_{{.SpaceID}}"
+				data-bs-parent="#accordionExample"
+				>
+				<div class="accordion-body">
+					<div class="list-group">
+					{{ range.ItemsRows }}
+					
+							<h5 class="mb-1">
+								<a href="https://app.contentful.com/spaces/{{$spaceID}}/content_types/{{.ContentTypeID}}/fields" target="_blank" class="link-primary">Name: {{.ContentTypeName}}</a>
+							</h5>
+							<h6>ID: {{.ContentTypeID}}</h6>
+						
+							<div class="vstack gap-1">
+								{{ range.Errors }}
+								<div class="bg-light border">{{.}}</div>			
+								{{ end }}
+							  </div>					  
+							<hr class="my-5">
+					
+					{{ end }}
+					</div>
+				</div>
+				</div>
+			</div>
+
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="headinSimilarity_{{.SpaceID}}">
+					<button
+						class="accordion-button"
+						type="button"
+						data-bs-toggle="collapse"
+						data-bs-target="#collapseSimilarity_{{.SpaceID}}"
+						aria-expanded="true"
+						aria-controls="collapseSimilarity_{{.SpaceID}}"
+					>
+						<h5 class="card-title">Similar Content Types found:</h5>
+					</button>
+				</h2>
+				<div
+				id="collapseSimilarity_{{.SpaceID}}"
+				class="accordion-collapse collapse"
+				aria-labelledby="headingSimilarity_{{.SpaceID}}"
+				data-bs-parent="#accordionExample"
+				>
+				<div class="accordion-body">
+					{{ range.ItemsSimilar }}
+
+					<div class="row mt-3">
+					<div class="col">
+						<div class="card">
+						<div class="card-header">ContentType Analysis</div>
+						<div class="card-body">
+							<h5 class="card-title">
+							SpaceID: <a href="https://app.contentful.com/spaces/{{.SpaceA}}"  target="_blank" class="link-primary">"{{.SpaceA}}"</a> - ContentType: "{{.ContentTypeNameA}}"
+							</h5>
+							<h5 class="card-title">
+							SpaceID: <a href="https://app.contentful.com/spaces/{{.SpaceB}}"  target="_blank" class="link-primary">"{{.SpaceB}}"</a> - ContentType: "{{.ContentTypeNameB}}"
+							</h5>
+							<p class="card-text list-group-item-primary">
+							Similarity of name: {{.NameSimilarity}}
+							</p>
+							<p class="card-text list-group-item-primary">
+							Similarity of fields: {{.FieldsSimilarity}}
+							</p>
+							<div class="row">
+							{{ range.SimilarFields }}
+							<div class="col-sm-6">
+								<div class="card">
+								<div class="card-body">
+									<h5 class="card-title">
+									Field - "{{ .ItemA.Name }}"
+									</h5>
+									<ul class="list-group list-group-flush">
+									<li class="list-group-item">
+										Type: {{ .ItemA.Type }}
+									</li>
+									<li class="list-group-item">
+										Required: {{ .ItemA.Required }}
+									</li>
+									<li class="list-group-item">
+										Omitted: {{ .ItemA.Omitted }}
+									</li>
+									<li class="list-group-item">
+										Disabled: {{ .ItemA.Disabled }}
+									</li>
+									<li class="list-group-item">
+										Localized: {{ .ItemA.Localized }}
+									</li>
+									</ul>
+								</div>
+								</div>
+							</div>
+							<div class="col-sm-6">
+								<div class="card">
+								<div class="card-body">
+									<h5 class="card-title">
+									Field - "{{ .ItemB.Name }}"
+									</h5>
+									<ul class="list-group list-group-flush">
+									<li class="list-group-item">
+										Type: {{ .ItemB.Type }}
+									</li>
+									<li class="list-group-item">
+										Required: {{ .ItemB.Required }}
+									</li>
+									<li class="list-group-item">
+										Omitted: {{ .ItemB.Omitted }}
+									</li>
+									<li class="list-group-item">
+										Disabled: {{ .ItemB.Disabled }}
+									</li>
+									<li class="list-group-item">
+										Localized: {{ .ItemB.Localized }}
+									</li>
+									</ul>
+								</div>
+								</div>
+							</div>
+							{{ end }}
+							</div>
+						</div>
+						</div>
+					</div>
+					</div>
+					{{ end }}
+				</div>
+				</div>
+			</div>
+		</div>
+	</div>	
+    {{ end }}
+
+	{{if .multiSpaces}}
+		<div class="container">
+			<hr class="my-4">
+		</div>
+		<div class="container">
+		<h1>** Analysis Report MultiSpaces **</h1>
+    {{end}}
+
+    {{ range.multiSpaces }}
+
+    <div class="accordion" id="accordionExample">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headinSimilarity_multi">
+          <button
+            class="accordion-button"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#collapseSimilarity_multi"
+            aria-expanded="true"
+            aria-controls="collapseSimilarity_multi"
+          >
+            <h5 class="card-title">Similar Content Types found:</h5>
+          </button>
+        </h2>
+        <div
+          id="collapseSimilarity_multi"
+          class="accordion-collapse collapse"
+          aria-labelledby="headingSimilarity_multi"
+          data-bs-parent="#accordionExample"
+        >
+          <div class="accordion-body">
+            {{ range.ItemsSimilar }}
+
+            <div class="row mt-3">
+              <div class="col">
+                <div class="card">
+                  <div class="card-header">ContentType Analysis</div>
+                  <div class="card-body">
+                    <h5 class="card-title">
+                      SpaceID: "{{.SpaceA}}" - ContentType: "{{.ContentTypeNameA}}"
+                    </h5>
+                    <h5 class="card-title">
+                      SpaceID: "{{.SpaceB}}" - ContentType: "{{.ContentTypeNameB}}"
+                    </h5>
+                    <p class="card-text list-group-item-primary">
+                      Similarity of name: {{.NameSimilarity}}
+                    </p>
+                    <p class="card-text list-group-item-primary">
+                      Similarity of fields: {{.FieldsSimilarity}}
+                    </p>
+                    <div class="row">
+                      {{ range.SimilarFields }}
+                      <div class="col-sm-6">
+                        <div class="card">
+                          <div class="card-body">
+                            <h5 class="card-title">
+                              Field - "{{ .ItemA.Name }}"
+                            </h5>
+                            <ul class="list-group list-group-flush">
+                              <li class="list-group-item">
+                                Type: {{ .ItemA.Type }}
+                              </li>
+                              <li class="list-group-item">
+                                Required: {{ .ItemA.Required }}
+                              </li>
+                              <li class="list-group-item">
+                                Omitted: {{ .ItemA.Omitted }}
+                              </li>
+                              <li class="list-group-item">
+                                Disabled: {{ .ItemA.Disabled }}
+                              </li>
+                              <li class="list-group-item">
+                                Localized: {{ .ItemA.Localized }}
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-sm-6">
+                        <div class="card">
+                          <div class="card-body">
+                            <h5 class="card-title">
+                              Field - "{{ .ItemB.Name }}"
+                            </h5>
+                            <ul class="list-group list-group-flush">
+                              <li class="list-group-item">
+                                Type: {{ .ItemB.Type }}
+                              </li>
+                              <li class="list-group-item">
+                                Required: {{ .ItemB.Required }}
+                              </li>
+                              <li class="list-group-item">
+                                Omitted: {{ .ItemB.Omitted }}
+                              </li>
+                              <li class="list-group-item">
+                                Disabled: {{ .ItemB.Disabled }}
+                              </li>
+                              <li class="list-group-item">
+                                Localized: {{ .ItemB.Localized }}
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      {{ end }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {{ end }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{ end }}
+	</div>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+{{range .spaces}}
+
+***************************************************************
+** Analysis Report Space '{{.SpaceID}}' **
+
+Description:
+
+* 💡 [Notice] - Good practice/recomendation.
+* 🔍 [Attention] - Something to have a look at.
+* 🏮 [Warning] - Possible issue.
+* ⛔ [Issue] - Something to consider changing.
+
+Total ContentTypes: {{.TotalTypes}}
+
+***** REPORT ******* 
+
+{{range .ItemsRows}}
+ContentType name: {{.ContentTypeName}}
+ContentType id: {{.ContentTypeID}}{{range .Errors}}
+{{.}}{{end}}
+{{end}}
+
+Similar Content Types found:
+{{range .ItemsSimilar}}
+SpaceID: '{{.SpaceA}}' - ContentType: '{{.ContentTypeNameA}}'
+SpaceID: '{{.SpaceB}}' - ContentType: '{{.ContentTypeNameB}}'
+
+Similarity of name: {{.NameSimilarity}}Similarity of fields: {{.FieldsSimilarity}}
+Fields: 
+     {{ range.SimilarFields }}
+     Field - "{{ .ItemA.Name }}"             Field - "{{ .ItemB.Name }}"
+     Type: {{.ItemA.Type}}                   Type: {{.ItemB.Type}}
+     Required: {{.ItemA.Required}}           Required: {{.ItemB.Required}}
+     Omitted: {{.ItemA.Omitted}}             Omitted: {{.ItemB.Omitted}}
+     Disabled: {{.ItemA.Disabled}}           Disabled: {{.ItemB.Disabled}}
+     Localized: {{.ItemA.Localized}}         Localized: {{.ItemB.Localized}}
+							
+     {{ end }}
+
+{{end}}
+{{end}}
+
+*** Validating multispace reusabaility ** 
+
+{{ range.multiSpaces }}
+         {{ range.ItemsSimilar }}
+SpaceID: "{{.SpaceA}}" - ContentType: "{{.ContentTypeNameA}}"
+SpaceID: "{{.SpaceB}}" - ContentType: "{{.ContentTypeNameB}}"
+                    
+Similarity of name: {{.NameSimilarity}}Similarity of fields: {{.FieldsSimilarity}}
+Fields:  
+     {{ range.SimilarFields }}               
+     Field - "{{ .ItemA.Name }}"             Field - "{{ .ItemB.Name }}"
+     Type: {{.ItemA.Type}}                   Type: {{.ItemB.Type}}
+     Required: {{.ItemA.Required}}           Required: {{.ItemB.Required}}
+     Omitted: {{.ItemA.Omitted}}             Omitted: {{.ItemB.Omitted}}
+     Disabled: {{.ItemA.Disabled}}           Disabled: {{.ItemB.Disabled}}
+     Localized: {{.ItemA.Localized}}         Localized: {{.ItemB.Localized}}
+     {{ end }}
+                       
+{{ end }}
+{{ end }}

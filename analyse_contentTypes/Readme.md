@@ -8,6 +8,10 @@ go.1.14 up
 
 ## How to use
 
+### options
+-html: creates a report as html format (default txt)
+-d: parse a directory of json spaces and return a report on each space and multispace similitud
+
 go run main.go -f some/file/fileName.json
 
 ### by executable 
@@ -25,10 +29,13 @@ $ ./analyseContentTypes -f some/file/fileName.json
 
 ### planned validations
 
-- Many assets validation, shows as lack of validations on report
+- Many assets validation, shows as lack of validations on report (DKABA good use case)
+
+### todos
 - Statistics of types repetien
-
-
+- Output txt, html
+  - HTML, link to ctf contentType
+- Binary for differernt OS: Mac, Win, Lin
 
 ## Example 
 

@@ -17,18 +17,22 @@
   </head>
 
   <body>
-    {{ range.spaces }}
 	<div class="container">
-		<div>
-			<br />
-		<h3>** Analysis Report for space <a href="https://app.contentful.com/spaces/{{.SpaceID}}"  target="_blank" class="link-primary">"{{.SpaceID}}"</a> **</h3>
+
+		<br />
+		<h1>Content Model report.</h1>
 		<div>Description:</div>
 		<div>* 💡 [Notice] - Good practice/recomendation.</div>
 		<div>* 🔍 [Attention] - Something to have a look at.</div>
 		<div>* 🏮 [Warning] - Possible issue.</div>
 		<div>* ⛔ [Issue] - Something to consider changing.</div>
-		<br />
-		<p>Total ContentTypes: {{.TotalTypes}}</p>
+	</div>
+    {{ range.spaces }}
+	<div class="container">
+		<div>
+			<br />
+			<h3>** Space <a href="https://app.contentful.com/spaces/{{.SpaceID}}"  target="_blank" class="link-primary">"{{.SpaceID}}"</a> **<span class="badge bg-secondary">Space ContentTypes: {{.TotalTypes}}</span></h3>
+			<br />
 		</div>
 
 		
@@ -36,14 +40,14 @@
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="headingValidation_{{.SpaceID}}">
 				<button
-					class="accordion-button"
+					class="accordion-button collapsed"
 					type="button"
 					data-bs-toggle="collapse"
 					data-bs-target="#collapseValidation_{{.SpaceID}}"
 					aria-expanded="true"
 					aria-controls="collapseValidation_{{.SpaceID}}"
 				>
-					<h5 class="card-title">Content Type validations for space <a href="https://app.contentful.com/spaces/{{.SpaceID}}"  target="_blank" class="link-primary">"{{.SpaceID}}"</a></h5>
+					<h5 class="card-title">Content Type validations for space "{{.SpaceID}}"</h5>
 					{{$spaceID := .SpaceID}}
 				</button>
 				</h2>
@@ -67,7 +71,7 @@
 								<div class="bg-light border">{{.}}</div>			
 								{{ end }}
 							  </div>					  
-							<hr class="my-5">
+							<hr class="my-4">
 					
 					{{ end }}
 					</div>
@@ -78,14 +82,14 @@
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="headinSimilarity_{{.SpaceID}}">
 					<button
-						class="accordion-button"
+						class="accordion-button collapsed"
 						type="button"
 						data-bs-toggle="collapse"
 						data-bs-target="#collapseSimilarity_{{.SpaceID}}"
 						aria-expanded="true"
 						aria-controls="collapseSimilarity_{{.SpaceID}}"
 					>
-						<h5 class="card-title">Similar Content Types found:</h5>
+						<h5 class="card-title">Similar ContentTypes for space "{{.SpaceID}}"</h5>
 					</button>
 				</h2>
 				<div
@@ -102,74 +106,81 @@
 						<div class="card">
 						<div class="card-header">ContentType Analysis</div>
 						<div class="card-body">
-							<h5 class="card-title">
+							<h6 class="card-title">
 							SpaceID: <a href="https://app.contentful.com/spaces/{{.SpaceA}}"  target="_blank" class="link-primary">"{{.SpaceA}}"</a> - ContentType: "{{.ContentTypeNameA}}"
-							</h5>
-							<h5 class="card-title">
+							<span class="badge bg-primary">Name similarity: {{.NameSimilarity}}</span> <span class="badge bg-info text-dark">Fields similarity: {{.FieldsSimilarity}}</span></h6>
+							<h6 class="card-title">
 							SpaceID: <a href="https://app.contentful.com/spaces/{{.SpaceB}}"  target="_blank" class="link-primary">"{{.SpaceB}}"</a> - ContentType: "{{.ContentTypeNameB}}"
-							</h5>
-							<p class="card-text list-group-item-primary">
-							Similarity of name: {{.NameSimilarity}}
-							</p>
-							<p class="card-text list-group-item-primary">
-							Similarity of fields: {{.FieldsSimilarity}}
-							</p>
-							<div class="row">
+							<span class="badge bg-primary">Name similarity: {{.NameSimilarity}}</span> <span class="badge bg-info text-dark">Fields similarity: {{.FieldsSimilarity}}</span></h6>
+							
+							{{$ctnameA := .ContentTypeNameA}}
+							{{$ctnameB := .ContentTypeNameB}}
+
 							{{ range.SimilarFields }}
-							<div class="col-sm-6">
-								<div class="card">
-								<div class="card-body">
-									<h5 class="card-title">
-									Field - "{{ .ItemA.Name }}"
-									</h5>
-									<ul class="list-group list-group-flush">
-									<li class="list-group-item">
-										Type: {{ .ItemA.Type }}
-									</li>
-									<li class="list-group-item">
-										Required: {{ .ItemA.Required }}
-									</li>
-									<li class="list-group-item">
-										Omitted: {{ .ItemA.Omitted }}
-									</li>
-									<li class="list-group-item">
-										Disabled: {{ .ItemA.Disabled }}
-									</li>
-									<li class="list-group-item">
-										Localized: {{ .ItemA.Localized }}
-									</li>
-									</ul>
+							<div class="row">
+								<div class="col-sm-6">
+									<div class="card">
+									<div class="card-body">
+
+										<h6 class="card-title">
+										ContentType name - "{{$ctnameA}}"
+										</h6>
+										<h6 class="card-title">
+										Field name - "{{ .ItemA.Name }}"
+										</h6>
+										<ul class="list-group list-group-flush">
+										<li class="list-group-item">
+											Type: {{ .ItemA.Type }}
+										</li>
+										<li class="list-group-item">
+											Required: {{ .ItemA.Required }}
+										</li>
+										<li class="list-group-item">
+											Omitted: {{ .ItemA.Omitted }}
+										</li>
+										<li class="list-group-item">
+											Disabled: {{ .ItemA.Disabled }}
+										</li>
+										<li class="list-group-item">
+											Localized: {{ .ItemA.Localized }}
+										</li>
+										</ul>
+									</div>
+									</div>
 								</div>
+								<div class="col-sm-6">
+									<div class="card">
+									<div class="card-body">
+										<h6 class="card-title">
+										ContentType name - "{{$ctnameB}}"
+										</h6>
+										<h6 class="card-title">
+										Field name - "{{ .ItemB.Name }}"
+										</h6>
+										<ul class="list-group list-group-flush">
+										<li class="list-group-item">
+											Type: {{ .ItemB.Type }}
+										</li>
+										<li class="list-group-item">
+											Required: {{ .ItemB.Required }}
+										</li>
+										<li class="list-group-item">
+											Omitted: {{ .ItemB.Omitted }}
+										</li>
+										<li class="list-group-item">
+											Disabled: {{ .ItemB.Disabled }}
+										</li>
+										<li class="list-group-item">
+											Localized: {{ .ItemB.Localized }}
+										</li>
+										</ul>
+									</div>
+									</div>
 								</div>
 							</div>
-							<div class="col-sm-6">
-								<div class="card">
-								<div class="card-body">
-									<h5 class="card-title">
-									Field - "{{ .ItemB.Name }}"
-									</h5>
-									<ul class="list-group list-group-flush">
-									<li class="list-group-item">
-										Type: {{ .ItemB.Type }}
-									</li>
-									<li class="list-group-item">
-										Required: {{ .ItemB.Required }}
-									</li>
-									<li class="list-group-item">
-										Omitted: {{ .ItemB.Omitted }}
-									</li>
-									<li class="list-group-item">
-										Disabled: {{ .ItemB.Disabled }}
-									</li>
-									<li class="list-group-item">
-										Localized: {{ .ItemB.Localized }}
-									</li>
-									</ul>
-								</div>
-								</div>
-							</div>
+							<br/>	
 							{{ end }}
-							</div>
+							
 						</div>
 						</div>
 					</div>
@@ -196,7 +207,7 @@
       <div class="accordion-item">
         <h2 class="accordion-header" id="headinSimilarity_multi">
           <button
-            class="accordion-button"
+            class="accordion-button collapsed"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#collapseSimilarity_multi"
@@ -220,74 +231,79 @@
                 <div class="card">
                   <div class="card-header">ContentType Analysis</div>
                   <div class="card-body">
-                    <h5 class="card-title">
-                      SpaceID: "{{.SpaceA}}" - ContentType: "{{.ContentTypeNameA}}"
-                    </h5>
-                    <h5 class="card-title">
-                      SpaceID: "{{.SpaceB}}" - ContentType: "{{.ContentTypeNameB}}"
-                    </h5>
-                    <p class="card-text list-group-item-primary">
-                      Similarity of name: {{.NameSimilarity}}
-                    </p>
-                    <p class="card-text list-group-item-primary">
-                      Similarity of fields: {{.FieldsSimilarity}}
-                    </p>
-                    <div class="row">
+                    <h6 class="card-title">
+                      SpaceID: <a href="https://app.contentful.com/spaces/{{.SpaceA}}"  target="_blank" class="link-primary">"{{.SpaceA}}"</a> - ContentType: "{{.ContentTypeNameA}}"
+                    <span class="badge bg-primary">Name similarity: {{.NameSimilarity}}</span> <span class="badge bg-info text-dark">Fields similarity: {{.FieldsSimilarity}}</span></h6>
+                    <h6 class="card-title">
+                      SpaceID: <a href="https://app.contentful.com/spaces/{{.SpaceB}}"  target="_blank" class="link-primary">"{{.SpaceB}}"</a> - ContentType: "{{.ContentTypeNameB}}"
+                    <span class="badge bg-primary">Name similarity: {{.NameSimilarity}}</span> <span class="badge bg-info text-dark">Fields similarity: {{.FieldsSimilarity}}</span></h6>
+                
+					{{$ctnameA := .ContentTypeNameA}}
+					{{$ctnameB := .ContentTypeNameB}}
+                    
                       {{ range.SimilarFields }}
-                      <div class="col-sm-6">
-                        <div class="card">
-                          <div class="card-body">
-                            <h5 class="card-title">
-                              Field - "{{ .ItemA.Name }}"
-                            </h5>
-                            <ul class="list-group list-group-flush">
-                              <li class="list-group-item">
-                                Type: {{ .ItemA.Type }}
-                              </li>
-                              <li class="list-group-item">
-                                Required: {{ .ItemA.Required }}
-                              </li>
-                              <li class="list-group-item">
-                                Omitted: {{ .ItemA.Omitted }}
-                              </li>
-                              <li class="list-group-item">
-                                Disabled: {{ .ItemA.Disabled }}
-                              </li>
-                              <li class="list-group-item">
-                                Localized: {{ .ItemA.Localized }}
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
+					  <div class="row">
+						<div class="col-sm-6">
+							<div class="card">
+							<div class="card-body">
+								<h6 class="card-title">
+								ContentType name - "{{$ctnameA}}"
+								</h6>
+								<h6 class="card-title">
+								Field name - "{{ .ItemA.Name }}"
+								</h6>
+								<ul class="list-group list-group-flush">
+								<li class="list-group-item">
+									Type: {{ .ItemA.Type }}
+								</li>
+								<li class="list-group-item">
+									Required: {{ .ItemA.Required }}
+								</li>
+								<li class="list-group-item">
+									Omitted: {{ .ItemA.Omitted }}
+								</li>
+								<li class="list-group-item">
+									Disabled: {{ .ItemA.Disabled }}
+								</li>
+								<li class="list-group-item">
+									Localized: {{ .ItemA.Localized }}
+								</li>
+								</ul>
+							</div>
+							</div>
+						</div>
+						<div class="col-sm-6">
+							<div class="card">
+							<div class="card-body">
+								<h6 class="card-title">
+								ContentType name - "{{$ctnameB}}"
+								</h6>
+								<h6 class="card-title">
+								Field name - "{{ .ItemB.Name }}"
+								</h6>
+								<ul class="list-group list-group-flush">
+								<li class="list-group-item">
+									Type: {{ .ItemB.Type }}
+								</li>
+								<li class="list-group-item">
+									Required: {{ .ItemB.Required }}
+								</li>
+								<li class="list-group-item">
+									Omitted: {{ .ItemB.Omitted }}
+								</li>
+								<li class="list-group-item">
+									Disabled: {{ .ItemB.Disabled }}
+								</li>
+								<li class="list-group-item">
+									Localized: {{ .ItemB.Localized }}
+								</li>
+								</ul>
+							</div>
+							</div>
+						</div>
                       </div>
-                      <div class="col-sm-6">
-                        <div class="card">
-                          <div class="card-body">
-                            <h5 class="card-title">
-                              Field - "{{ .ItemB.Name }}"
-                            </h5>
-                            <ul class="list-group list-group-flush">
-                              <li class="list-group-item">
-                                Type: {{ .ItemB.Type }}
-                              </li>
-                              <li class="list-group-item">
-                                Required: {{ .ItemB.Required }}
-                              </li>
-                              <li class="list-group-item">
-                                Omitted: {{ .ItemB.Omitted }}
-                              </li>
-                              <li class="list-group-item">
-                                Disabled: {{ .ItemB.Disabled }}
-                              </li>
-                              <li class="list-group-item">
-                                Localized: {{ .ItemB.Localized }}
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                      {{ end }}
-                    </div>
+					  {{ end }}
+                    
                   </div>
                 </div>
               </div>
@@ -299,6 +315,27 @@
     </div>
 
     {{ end }}
+
+	{{if .multiSpaces}}
 	</div>
+	{{end}}
+
+    <div class="container">
+		<br />
+      <br />
+      <h6>Contentful’s Professional Services.</h6>
+      <div>
+        Implement Contentful with onboarding resources, support tools and
+        technical guidance from our solution architects.
+      </div>
+      <a href="https://www.contentful.com/professional-services/" target="blank"
+        >Do you want to know more.</a
+      >
+	  <br />
+      <br />
+	  <br />
+      <br />
+    </div>
+
   </body>
 </html>

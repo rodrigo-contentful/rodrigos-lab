@@ -6,4 +6,4 @@ docker build --tag ctf-docker .
 #fi
 
 docker run --rm -v $PWD/task:/ctfanalyser/task ctf-docker
-# docker rmi ctf-docker
+docker rmi ctf-docker

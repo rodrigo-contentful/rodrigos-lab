@@ -11,5 +11,5 @@ COPY task /ctfanalyser/task/
 #set working dir
 WORKDIR /ctfanalyser
 
-CMD ./contentAnalyser_linux -d task/ ; cp *.html task/
+CMD ./contentAnalyser_linux -d task/ ; cp *.html task/ ; rm *.html
 

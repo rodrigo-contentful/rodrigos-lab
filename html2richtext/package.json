@@ -1,0 +1,19 @@
+{
+  "name": "html-2-contentful-richtext",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@contentful/rich-text-from-markdown": "^13.4.0",
+    "express": "^4.17.1",
+    "express-async-handler": "^1.1.4",
+    "turndown": "^5.0.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

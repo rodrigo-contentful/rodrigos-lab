@@ -20,4 +20,4 @@ $ curl --location --request POST 'http://localhost:3000/convert' \
 
 # References
 
-Big thanks to Morten Bujordet and team.
+Big thanks to Morten Bujordet, Omar Diab and team.

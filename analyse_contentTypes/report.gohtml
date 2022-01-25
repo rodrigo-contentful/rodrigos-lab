@@ -14,6 +14,8 @@
       integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ"
       crossorigin="anonymous"
     ></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	
   </head>
 
   <body>
@@ -21,11 +23,15 @@
 
 		<br />
 		<h1>Content Model report.</h1>
-		<div>Description:</div>
-		<div>* 💡 [Notice] - Good practice/recomendation.</div>
-		<div>* 🔍 [Attention] - Something to have a look at.</div>
-		<div>* 🏮 [Warning] - Possible issue.</div>
-		<div>* ⛔ [Issue] - Something to consider changing.</div>
+		<div>Automated report on conten tmodel convemtions and good practices.</div>
+		<div>Report description:</div>
+		<ul class="list-group">
+			<li class="list-group-item list-group-item-success"> 🥇 Good practice.</li>
+			<li class="list-group-item list-group-item-info"> 💡 [Notice] - Possible recomendation.</li>
+			<li class="list-group-item list-group-item-primary"> ❗ [Attention] - Something to have a look at.</li>
+			<li class="list-group-item list-group-item-warning"> ⛔ [Warning] - Possible issue.</li>
+			<li class="list-group-item list-group-item-danger"> 🚫 [Issue] - Something to consider changing.</li>
+		</ul>
 	</div>
     {{ range.spaces }}
 	<div class="container">
@@ -59,19 +65,96 @@
 				>
 				<div class="accordion-body">
 					<div class="list-group">
-					{{ range.ItemsRows }}
 					
-							<h5 class="mb-1">
-								<a href="https://app.contentful.com/spaces/{{$spaceID}}/content_types/{{.ContentTypeID}}/fields" target="_blank" class="link-primary">Name: {{.ContentTypeName}}</a>
-							</h5>
-							<h6>ID: {{.ContentTypeID}}</h6>
-						
-							<div class="vstack gap-1">
-								{{ range.Errors }}
-								<div class="bg-light border">{{.}}</div>			
+					{{ range.ItemsRows }}
+						<li class="list-group-item d-flex justify-content-between align-items-start">
+						<div class="ms-2 me-auto">
+							<div class="fw-bold">
+							Content type name: <a href="https://app.contentful.com/spaces/{{$spaceID}}/content_types/{{.ContentTypeID}}/fields" target="_blank" class="link-primary">{{.ContentTypeName}}</a>
+							<span class="badge bg-info text-dark rounded-pill">ID: {{.ContentTypeID}}</span>
+							</div>
+							<ul class="list-group">	
+							
+									{{ range.Errors }}
+									{{ if (eq .Level "none") }} 
+										<li class="list-group-item list-group-item-success"> 🥇  
+										{{ if (ne .ToolTipDesc "") }}
+											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+										{{ else }}
+											{{.Raw}}
+										{{ end }}
+
+										{{ if (ne .DocsUrl "") }}
+											<a target="_blank" href="{{ .DocsUrl }}" class="link-secondary float-end"> ?</a>
+										{{ end }}
+										</li>
+									{{ else if (eq .Level "notice") }} 
+										<li class="list-group-item list-group-item-info"> 💡  
+										{{ if (ne .ToolTipDesc "") }}
+											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+										{{ else }}
+											{{.Raw}}
+										{{ end }}
+										  
+										{{ if (ne .DocsUrl "") }}
+											<a target="_blank" href="{{ .DocsUrl }}" class="link-secondary float-end"> ?</a>
+										{{ end }}
+										</li>
+									{{ else if (eq .Level "attention") }}
+										<li class="list-group-item list-group-item-primary"> ❗ 
+										{{ if (ne .ToolTipDesc "") }}
+											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+										{{ else }}
+											{{.Raw}}
+										{{ end }}
+										 
+										{{ if (ne .DocsUrl "") }}
+											<a target="_blank" href="{{ .DocsUrl }}" class="link-secondary float-end"> ?</a>									
+										{{ end }}
+										</li>
+									{{ else if (eq .Level "warning") }} 
+										<li class="list-group-item list-group-item-warning"> ⛔   
+										{{ if (ne .ToolTipDesc "") }}
+											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+										{{ else }}
+											{{.Raw}}
+										{{ end }}
+										 
+										{{ if (ne .DocsUrl "") }}
+											<a target="_blank" href="{{ .DocsUrl }}" class="link-secondary float-end"> ?</a>
+										{{ end }}
+										
+										</li>	
+									{{ else if (eq .Level "issue") }} 
+										<li class="list-group-item list-group-item-danger"> 🚫   
+										{{ if (ne .ToolTipDesc "") }}
+											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+										{{ else }}
+											{{.Raw}}
+										{{ end }}
+										 
+										{{ if (ne .DocsUrl "") }}
+											<a target="_blank" href="{{ .DocsUrl }}" class="link-secondary float-end"> ?</a>
+										{{ end }}
+										</li>	
+									{{ else }}
+										<li class="list-group-item list-group-item-secondary"> 🤕   
+										{{ if (ne .ToolTipDesc "") }}
+											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+										{{ else }}
+											{{.Raw}}
+										{{ end }}
+										 
+										{{ if (ne .DocsUrl "") }}
+											<a target="_blank" href="{{ .DocsUrl }}" class="link-secondary float-end"> ?</a>
+										{{ end }}
+										</li>	
+									{{ end }}
 								{{ end }}
-							  </div>					  
-							<hr class="my-4">
+							</ul>
+						</div>
+						</li>
+						<hr class="my-4">
 					
 					{{ end }}
 					</div>
@@ -337,5 +420,14 @@
       <br />
     </div>
 
+<script>
+$(document).ready(function(){
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+	var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+	return new bootstrap.Popover(popoverTriggerEl)
+	})
+	
+});
+</script>
   </body>
 </html>

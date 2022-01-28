@@ -26,11 +26,11 @@
 		<div>Automated report on conten tmodel convemtions and good practices.</div>
 		<div>Report description:</div>
 		<ul class="list-group">
-			<li class="list-group-item list-group-item-success"> 🥇 Good practice.</li>
-			<li class="list-group-item list-group-item-info"> 💡 [Notice] - Possible recomendation.</li>
-			<li class="list-group-item list-group-item-primary"> ❗ [Attention] - Something to have a look at.</li>
-			<li class="list-group-item list-group-item-warning"> ⛔ [Warning] - Possible issue.</li>
-			<li class="list-group-item list-group-item-danger"> 🚫 [Issue] - Something to consider changing.</li>
+			<li class="list-group-item list-group-item-success">🥇<span style="padding-left: 5px;">Good practice.</span></li>
+			<li class="list-group-item list-group-item-info">💡<span style="padding-left: 5px;">[Notice] - Possible recomendation.</span></li>
+			<li class="list-group-item list-group-item-primary">❗<span style="padding-left: 5px;">[Attention] - Something to have a look at.</span></li>
+			<li class="list-group-item list-group-item-warning">⛔<span style="padding-left: 5px;"> [Warning] - Possible issue.</span></li>
+			<li class="list-group-item list-group-item-danger">🚫<span style="padding-left: 5px;">[Issue] - Something to consider changing.</span></li>
 		</ul>
 	</div>
     {{ range.spaces }}
@@ -77,9 +77,9 @@
 							
 									{{ range.Errors }}
 									{{ if (eq .Level "none") }} 
-										<li class="list-group-item list-group-item-success"> 🥇  
+										<li class="list-group-item list-group-item-success">🥇
 										{{ if (ne .ToolTipDesc "") }}
-											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+											<a class="link-primary" style="padding-left: 5px;cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
 										{{ else }}
 											{{.Raw}}
 										{{ end }}
@@ -89,9 +89,9 @@
 										{{ end }}
 										</li>
 									{{ else if (eq .Level "notice") }} 
-										<li class="list-group-item list-group-item-info"> 💡  
+										<li class="list-group-item list-group-item-info">💡
 										{{ if (ne .ToolTipDesc "") }}
-											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+											<a class="link-primary" style="padding-left: 5px;cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
 										{{ else }}
 											{{.Raw}}
 										{{ end }}
@@ -101,9 +101,9 @@
 										{{ end }}
 										</li>
 									{{ else if (eq .Level "attention") }}
-										<li class="list-group-item list-group-item-primary"> ❗ 
+										<li class="list-group-item list-group-item-primary">❗
 										{{ if (ne .ToolTipDesc "") }}
-											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+											<a class="link-primary" style="padding-left: 5px;cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
 										{{ else }}
 											{{.Raw}}
 										{{ end }}
@@ -113,9 +113,9 @@
 										{{ end }}
 										</li>
 									{{ else if (eq .Level "warning") }} 
-										<li class="list-group-item list-group-item-warning"> ⛔   
+										<li class="list-group-item list-group-item-warning">⛔
 										{{ if (ne .ToolTipDesc "") }}
-											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+											<a class="link-primary" style="padding-left: 5px;cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}"> {{.Raw}}</a>
 										{{ else }}
 											{{.Raw}}
 										{{ end }}
@@ -126,9 +126,9 @@
 										
 										</li>	
 									{{ else if (eq .Level "issue") }} 
-										<li class="list-group-item list-group-item-danger"> 🚫   
+										<li class="list-group-item list-group-item-danger">🚫
 										{{ if (ne .ToolTipDesc "") }}
-											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+											<a class="link-primary" style="padding-left: 5px;cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
 										{{ else }}
 											{{.Raw}}
 										{{ end }}
@@ -138,9 +138,9 @@
 										{{ end }}
 										</li>	
 									{{ else }}
-										<li class="list-group-item list-group-item-secondary"> 🤕   
+										<li class="list-group-item list-group-item-secondary">🤕
 										{{ if (ne .ToolTipDesc "") }}
-											<a class="link-primary" style="cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
+											<a class="link-primary" style="padding-left: 5px;cursor: pointer;" data-bs-toggle="popover" title="Explanation" data-bs-content="{{ .ToolTipDesc }}">{{.Raw}}</a>
 										{{ else }}
 											{{.Raw}}
 										{{ end }}

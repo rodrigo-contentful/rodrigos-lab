@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 
 # copy required files
-COPY contentAnalyser_linux /ctfanalyser/
+COPY bin/contentAnalyser_linux /ctfanalyser/
 COPY report.gohtml /ctfanalyser/
 COPY report.gotxt /ctfanalyser/
 
